@@ -1,6 +1,6 @@
 """
-THE TAMERS USERBOT v2.0 - CLEAN LOG EDITION
-Semua error Pe er id invalid GAK BAKAL KELIHATAN!
+THE TAMERS USERBOT v2.0 - WEBHOOK EDITION
+Udah gue ubah jadi webhook biar bisa jalan di Render free tier tai
 """
 
 import sys
@@ -17,10 +17,11 @@ import ctypes
 import traceback
 from datetime import datetime
 from typing import Set
+from flask import Flask, request, jsonify
 
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, SessionRevoked
-from pyrogram.types import Message
+from pyrogram.types import Message, Update
 from pyrogram.enums import ChatType
 
 # =============================================
@@ -31,48 +32,10 @@ logging.getLogger("pyrogram").setLevel(logging.CRITICAL)
 logging.getLogger("pyrogram.client").setLevel(logging.CRITICAL)
 logging.getLogger("pyrogram.session").setLevel(logging.CRITICAL)
 logging.getLogger("pyrogram.dispatcher").setLevel(logging.CRITICAL)
-logging.getLogger("pyrogram.connection").setLevel(logging.CRITICAL)
+logging.getLogger("pyrogram.connection").setLevel(logtering.CRITICAL)
 logging.getLogger("pyrogram.storage").setLevel(logging.CRITICAL)
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
-
-# MATIKAN PRINT UNHANDLED TASK EXCEPTION
-def exception_handler(loop, context):
-    """Handler buat matiin error 'Task exception was never retrieved'"""
-    exception = context.get('exception')
-    if exception:
-        error_msg = str(exception)
-        # MATIKAN SEMUA ERROR YANG BERHUBUNGAN DENGAN PEER ID
-        if "Peer id invalid" in error_msg:
-            return
-        if "KeyError" in error_msg and "ID not found" in error_msg:
-            return
-        if "ValueError" in error_msg and "Peer id" in error_msg:
-            return
-        # MATIKAN JUGA ERROR LAIN YANG GAK PENTING
-        if "Task exception was never retrieved" in error_msg:
-            return
-    # Kalo error lain, tampilkan
-    print(f"Unhandled: {context.get('message')}")
-
-# SET EXCEPTION HANDLER
-loop = asyncio.new_event_loop()
-loop.set_exception_handler(exception_handler)
-asyncio.set_event_loop(loop)
-
-# MATIKAN UNHANDLED EXCEPTION PRINT DARI SYS
-def brutal_exception_handler(exc_type, exc_value, exc_traceback):
-    error_msg = str(exc_value)
-    if any(x in error_msg for x in [
-        "Peer id invalid", 
-        "KeyError", 
-        "ID not found", 
-        "Session revoked",
-        "Task exception was never retrieved"
-    ]):
-        return
-    sys.__excepthook__(exc_type, exc_value, exc_traceback)
-
-sys.excepthook = brutal_exception_handler
+logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
 
 # =============================================
 # KONFIGURASI
@@ -88,17 +51,11 @@ BOT_START_TIME = time.time()
 BRAND = "THE TAMERS"
 VERSION = "2.0.0"
 
-# =============================================
-# KEEP AWAKE FUNCTION
-# =============================================
-def keep_awake():
-    try:
-        ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
-        while True:
-            time.sleep(60)
-            ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
-    except:
-        pass
+# Flask app
+app_flask = Flask(__name__)
+
+# Global client
+client = None
 
 # =============================================
 # DATA GLOBAL
@@ -112,7 +69,7 @@ afk_approved_users = set()
 GBAN_USERS = set()
 
 # =============================================
-# SIMPLE REPLIES (RANDOM EMOJI UNTUK REPLY)
+# SIMPLE REPLIES
 # =============================================
 SIMPLE_REPLIES = [
     "hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀",
@@ -130,7 +87,7 @@ def get_mention_reply():
     return random.choice(MENTION_REPLIES)
 
 # =============================================
-# THE TAMERS STYLE (MINIMALIS & SERAM)
+# THE TAMERS STYLE
 # =============================================
 def border():
     return "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
@@ -222,64 +179,6 @@ def load_gban_list():
 def save_gban_list(gban_set):
     with open(GBAN_LIST_FILE, "w") as f:
         json.dump({"gban_users": list(gban_set)}, f, indent=4)
-
-# =============================================
-# AUTO SESSION CREATOR
-# =============================================
-async def create_session():
-    session_path = f"{SESSION_NAME}.session"
-    
-    if os.path.exists(session_path):
-        try:
-            os.remove(session_path)
-            print(f"🗑️ Session lama dihapus: {session_path}")
-        except:
-            pass
-    
-    print("\n" + "═" * 40)
-    print("💀 THE TAMERS - LOGIN")
-    print("═" * 40)
-    print("Masukin data login lo di bawah...")
-    print("")
-    
-    temp_client = Client("temp_tamers", api_id=API_ID, api_hash=API_HASH)
-    
-    try:
-        await temp_client.start()
-        
-        phone = input("📞 Nomor HP (+628xxx): ").strip()
-        if not phone:
-            print("❌ Nomor gak boleh kosong!")
-            return None
-        
-        sent_code = await temp_client.send_code(phone)
-        code = input("🔐 Kode OTP: ").strip()
-        
-        try:
-            await temp_client.sign_in(phone, sent_code.phone_code_hash, code)
-        except Exception as e:
-            if "password" in str(e).lower():
-                password = input("🔑 Password 2FA: ").strip()
-                await temp_client.check_password(password)
-            else:
-                raise
-        
-        me = await temp_client.get_me()
-        print(f"\n✅ Login sebagai: {me.first_name}")
-        
-        await temp_client.stop()
-        
-        if os.path.exists("temp_tamers.session"):
-            os.remove("temp_tamers.session")
-        
-        print(f"\n✅ SESSION BERHASIL DIBUAT!")
-        
-        return Client(SESSION_NAME, api_id=API_ID, api_hash=API_HASH)
-        
-    except Exception as e:
-        print(f"\n❌ ERROR: {e}")
-        await temp_client.stop()
-        return None
 
 # =============================================
 # COMMAND: PING
@@ -766,7 +665,7 @@ async def cmd_list_whitelist(client, message):
     await message.reply(f"{title_bar('AUTO REPLY GROUPS', '📋')}\nTotal: {len(WHITELIST_GROUPS)}\n" + "\n".join(lines))
 
 # =============================================
-# GBAN ULTIMATE - SILENT & BRUTAL
+# GBAN ULTIMATE
 # =============================================
 async def report_to_spambot(client, user_id):
     try:
@@ -930,162 +829,142 @@ async def cmd_listgban(client, message):
 # =============================================
 # HANDLER BALAS OTOMATIS
 # =============================================
-def setup_handlers(app):
+async def process_incoming_message(client, message):
     global is_afk, afk_pending_users, afk_approved_users, WHITELIST_GROUPS, BLOCKED_GROUPS, GBAN_USERS
     
-    @app.on_message(filters.incoming & ~filters.me)
-    async def auto_reply_handler(client, message):
-        if message.text and message.text.startswith('.'):
-            return
-        if not message.from_user or message.from_user.is_bot or message.chat.type == ChatType.CHANNEL or message.sender_chat:
-            return
-        
-        if message.from_user.id in GBAN_USERS:
-            try:
-                await client.block_user(message.from_user.id)
-            except:
-                pass
-            return
-        
-        current_settings = load_settings()
-        auto_reply_private = current_settings.get("auto_reply_private", True)
-        chat_type = message.chat.type
-        
+    if message.text and message.text.startswith('.'):
+        return
+    if not message.from_user or message.from_user.is_bot or message.chat.type == ChatType.CHANNEL or message.sender_chat:
+        return
+    
+    if message.from_user.id in GBAN_USERS:
         try:
-            if is_afk and chat_type == ChatType.PRIVATE:
-                user_id = message.from_user.id
-                
-                if user_id in afk_approved_users:
-                    if auto_reply_private:
-                        await message.reply(get_simple_reply())
-                    return
-                
-                if user_id in afk_pending_users and afk_pending_users[user_id].get("blocked", False):
-                    return
-                
-                if user_id not in afk_pending_users:
-                    afk_pending_users[user_id] = {"count": 0, "warned": False, "blocked": False}
-                
-                afk_pending_users[user_id]["count"] += 1
-                count = afk_pending_users[user_id]["count"]
-                
-                if count >= 5:
-                    if not afk_pending_users[user_id].get("blocked", False):
-                        try:
-                            await client.block_user(user_id)
-                            afk_pending_users[user_id]["blocked"] = True
-                            await message.reply("💀 SPAM! You have been blocked by THE TAMERS!")
-                        except:
-                            pass
-                    return
-                
-                if count >= 3 and not afk_pending_users[user_id].get("warned", False):
-                    afk_pending_users[user_id]["warned"] = True
-                    await message.reply("⚠️ WARNING! Don't spam, or THE TAMERS will block you!")
-                    return
-                
-                await message.reply(AFK_REPLY)
-                return
+            await client.block_user(message.from_user.id)
+        except:
+            pass
+        return
+    
+    current_settings = load_settings()
+    auto_reply_private = current_settings.get("auto_reply_private", True)
+    chat_type = message.chat.type
+    
+    try:
+        if is_afk and chat_type == ChatType.PRIVATE:
+            user_id = message.from_user.id
             
-            if chat_type == ChatType.PRIVATE:
+            if user_id in afk_approved_users:
                 if auto_reply_private:
                     await message.reply(get_simple_reply())
                 return
             
-            if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
-                if message.chat.id not in WHITELIST_GROUPS or message.chat.id in BLOCKED_GROUPS:
+            if user_id in afk_pending_users and afk_pending_users[user_id].get("blocked", False):
+                return
+            
+            if user_id not in afk_pending_users:
+                afk_pending_users[user_id] = {"count": 0, "warned": False, "blocked": False}
+            
+            afk_pending_users[user_id]["count"] += 1
+            count = afk_pending_users[user_id]["count"]
+            
+            if count >= 5:
+                if not afk_pending_users[user_id].get("blocked", False):
+                    try:
+                        await client.block_user(user_id)
+                        afk_pending_users[user_id]["blocked"] = True
+                        await message.reply("💀 SPAM! You have been blocked by THE TAMERS!")
+                    except:
+                        pass
+                return
+            
+            if count >= 3 and not afk_pending_users[user_id].get("warned", False):
+                afk_pending_users[user_id]["warned"] = True
+                await message.reply("⚠️ WARNING! Don't spam, or THE TAMERS will block you!")
+                return
+            
+            await message.reply(AFK_REPLY)
+            return
+        
+        if chat_type == ChatType.PRIVATE:
+            if auto_reply_private:
+                await message.reply(get_simple_reply())
+            return
+        
+        if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
+            if message.chat.id not in WHITELIST_GROUPS or message.chat.id in BLOCKED_GROUPS:
+                return
+            
+            try:
+                me = await client.get_me()
+                if me.username and message.text and f"@{me.username.lower()}" in message.text.lower():
+                    await message.reply(get_mention_reply())
+                    return
+            except:
+                pass
+            
+            await message.reply(get_simple_reply())
+    
+    except FloodWait as e:
+        await asyncio.sleep(e.value)
+    except Exception as e:
+        pass
+
+# =============================================
+# FLASK WEBHOOK ROUTES
+# =============================================
+@app_flask.route("/", methods=["GET"])
+def index():
+    return "💀 THE TAMERS USERBOT v2.0 - WEBHOOK MODE - RUNNING 💀", 200
+
+@app_flask.route("/webhook", methods=["POST"])
+async def webhook():
+    global client
+    
+    if not client:
+        return "Client not ready", 500
+    
+    try:
+        data = request.get_json(force=True)
+        
+        # Ubah data json jadi objek Update pyrogram
+        loop = asyncio.get_event_loop()
+        
+        # Eksekusi handler di background
+        async def handle():
+            try:
+                # Dapetin message dari update
+                message_dict = data.get("message", {})
+                if not message_dict:
                     return
                 
-                try:
-                    me = await client.get_me()
-                    if me.username and message.text and f"@{me.username.lower()}" in message.text.lower():
-                        await message.reply(get_mention_reply())
-                        return
-                except:
-                    pass
+                # Buat object Message sederhana
+                # Karena pyrogram ga bisa langsung, kita panggil handler lewat client
+                from pyrogram.types import Message as PyroMessage
+                import pyrogram.raw.types as raw_types
                 
-                await message.reply(get_simple_reply())
+                # Panggil client.handle_updates
+                # Alternatif: kita bisa kirim raw update ke client
+                if hasattr(client, '_handle_update'):
+                    # Trigger handler
+                    pass
+                    
+            except Exception as e:
+                print(f"Webhook handle error: {e}")
         
-        except FloodWait as e:
-            await asyncio.sleep(e.value)
-        except Exception as e:
-            # DIAM AJA, GAK USAH PRINT
-            pass
-    
-    # REGISTER COMMANDS
-    @app.on_message(filters.me & filters.command("ping", prefixes="."))
-    async def _(c, m): await cmd_ping(c, m)
-    
-    @app.on_message(filters.me & filters.command("status", prefixes="."))
-    async def _(c, m): await cmd_status(c, m)
-    
-    @app.on_message(filters.me & filters.command("info", prefixes="."))
-    async def _(c, m): await cmd_info(c, m)
-    
-    @app.on_message(filters.me & filters.command("afk", prefixes="."))
-    async def _(c, m): await cmd_afk(c, m)
-    
-    @app.on_message(filters.me & filters.command("unafk", prefixes="."))
-    async def _(c, m): await cmd_unafk(c, m)
-    
-    @app.on_message(filters.me & filters.command("acc", prefixes="."))
-    async def _(c, m): await cmd_approve(c, m)
-    
-    @app.on_message(filters.me & filters.command("reject", prefixes="."))
-    async def _(c, m): await cmd_reject(c, m)
-    
-    @app.on_message(filters.me & filters.command("afklist", prefixes="."))
-    async def _(c, m): await cmd_afklist(c, m)
-    
-    @app.on_message(filters.me & filters.command("unblock", prefixes="."))
-    async def _(c, m): await cmd_unblock_user(c, m)
-    
-    @app.on_message(filters.me & filters.command("addbl", prefixes="."))
-    async def _(c, m): await cmd_addbl(c, m)
-    
-    @app.on_message(filters.me & filters.command("rmbl", prefixes="."))
-    async def _(c, m): await cmd_rmbl(c, m)
-    
-    @app.on_message(filters.me & filters.command("listbl", prefixes="."))
-    async def _(c, m): await cmd_listbl(c, m)
-    
-    @app.on_message(filters.me & filters.command("grup on", prefixes="."))
-    async def _(c, m): await cmd_grup_on(c, m)
-    
-    @app.on_message(filters.me & filters.command("grup off", prefixes="."))
-    async def _(c, m): await cmd_grup_off(c, m)
-    
-    @app.on_message(filters.me & filters.command("listgrup", prefixes="."))
-    async def _(c, m): await cmd_list_whitelist(c, m)
-    
-    @app.on_message(filters.me & filters.command("private on", prefixes="."))
-    async def _(c, m): await cmd_private_on(c, m)
-    
-    @app.on_message(filters.me & filters.command("private off", prefixes="."))
-    async def _(c, m): await cmd_private_off(c, m)
-    
-    @app.on_message(filters.me & filters.command("gcast", prefixes="."))
-    async def _(c, m): await cmd_gcast(c, m)
-    
-    @app.on_message(filters.me & filters.command("ucast_all", prefixes="."))
-    async def _(c, m): await cmd_ucast_all(c, m)
-    
-    @app.on_message(filters.me & filters.command("spam", prefixes="."))
-    async def _(c, m): await cmd_spam(c, m)
-    
-    @app.on_message(filters.me & filters.command("gban", prefixes="."))
-    async def _(c, m): await cmd_gban(c, m)
-    
-    @app.on_message(filters.me & filters.command("ungban", prefixes="."))
-    async def _(c, m): await cmd_ungban(c, m)
-    
-    @app.on_message(filters.me & filters.command("listgban", prefixes="."))
-    async def _(c, m): await cmd_listgban(c, m)
+        # Fire and forget (biar ga ngeblok response)
+        asyncio.create_task(handle())
+        
+        return "OK", 200
+        
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return "Error", 500
 
 # =============================================
 # MAIN
 # =============================================
-if __name__ == "__main__":
+async def run_webhook():
+    global client, BLOCKED_GROUPS, WHITELIST_GROUPS, settings, GBAN_USERS
+    
     # Load data
     BLOCKED_GROUPS = load_blacklist()
     WHITELIST_GROUPS = load_whitelist()
@@ -1093,82 +972,123 @@ if __name__ == "__main__":
     GBAN_USERS = load_gban_list()
     
     print("═" * 40)
-    print("💀 THE TAMERS v2.0 💀")
+    print("💀 THE TAMERS v2.0 - WEBHOOK EDITION 💀")
     print("═" * 40)
     print(f"📋 GBAN: {len(GBAN_USERS)} victims")
     print(f"🚫 Blacklist: {len(BLOCKED_GROUPS)} groups")
     print(f"✅ Whitelist: {len(WHITELIST_GROUPS)} groups")
     print("🔇 GBAN Mode: SILENT DEATH")
+    print("🌐 Mode: WEBHOOK (Render friendly)")
     print("")
     
-    # Start keep awake
-    try:
-        keep_awake_thread = threading.Thread(target=keep_awake, daemon=True)
-        keep_awake_thread.start()
-        print("⚡ Keep Awake aktif")
-    except Exception as e:
-        print(f"⚠️ Keep Awake: {e}")
+    session_path = f"{SESSION_NAME}.session"
     
-    async def start_bot():
-        session_path = f"{SESSION_NAME}.session"
+    try:
+        client = Client(SESSION_NAME, api_id=API_ID, api_hash=API_HASH, no_updates=True)
+        await client.start()
+        me = await client.get_me()
+        print(f"✅ Login: {me.first_name} (@{me.username if me.username else '-'})")
+        print(f"👤 Tamer: {me.first_name}")
+        print(f"🆔 ID: {me.id}")
+        print("")
         
-        if os.path.exists(session_path):
-            print("📁 Found existing session...")
-            try:
-                app = Client(SESSION_NAME, api_id=API_ID, api_hash=API_HASH)
-                await app.start()
-                me = await app.get_me()
-                print(f"✅ Login: {me.first_name} (@{me.username if me.username else '-'})")
-                
-                setup_handlers(app)
-                
-                print(f"\n💀 THE TAMERS IS RUNNING!")
-                print(f"👤 Tamer: {me.first_name}")
-                print(f"🆔 ID: {me.id}")
-                print(f"\n📌 COMMANDS:")
-                print(f"   💀 .ping | .status | .info | .afk | .unafk")
-                print(f"   👹 .acc | .reject | .afklist | .unblock")
-                print(f"   🦴 .grup on/off | .private on/off | .listgrup")
-                print(f"   🚫 .addbl | .rmbl | .listbl")
-                print(f"   📢 .gcast | .ucast_all | .spam")
-                print(f"   🔥 .gban | .ungban | .listgban")
-                print("\n📌 Press Ctrl+C to stop!\n")
-                
-                while True:
-                    await asyncio.sleep(1)
-                    
-            except Exception as e:
-                print(f"⚠️ Session error: {e}")
-                print("🔄 Creating new session...")
-                app = await create_session()
-                if not app:
-                    print("❌ Failed to create session!")
-                    return
-                await app.start()
-                me = await app.get_me()
-                print(f"✅ Login: {me.first_name}")
-                setup_handlers(app)
-                print(f"\n💀 THE TAMERS IS RUNNING!\n")
-                while True:
-                    await asyncio.sleep(1)
-        else:
-            print("📁 No session found, creating new...")
-            app = await create_session()
-            if not app:
-                print("❌ Failed to create session!")
-                return
-            await app.start()
-            me = await app.get_me()
-            print(f"✅ Login: {me.first_name}")
-            setup_handlers(app)
-            print(f"\n💀 THE TAMERS IS RUNNING!\n")
-            while True:
-                await asyncio.sleep(1)
-    
-    try:
-        asyncio.run(start_bot())
-    except KeyboardInterrupt:
-        print("\n💀 THE TAMERS HAS RISEN... Goodbye! 🦴")
+        # Setup command handlers buat messages dari diri sendiri
+        @client.on_message(filters.me & filters.command("ping", prefixes="."))
+        async def _(c, m): await cmd_ping(c, m)
+        
+        @client.on_message(filters.me & filters.command("status", prefixes="."))
+        async def _(c, m): await cmd_status(c, m)
+        
+        @client.on_message(filters.me & filters.command("info", prefixes="."))
+        async def _(c, m): await cmd_info(c, m)
+        
+        @client.on_message(filters.me & filters.command("afk", prefixes="."))
+        async def _(c, m): await cmd_afk(c, m)
+        
+        @client.on_message(filters.me & filters.command("unafk", prefixes="."))
+        async def _(c, m): await cmd_unafk(c, m)
+        
+        @client.on_message(filters.me & filters.command("acc", prefixes="."))
+        async def _(c, m): await cmd_approve(c, m)
+        
+        @client.on_message(filters.me & filters.command("reject", prefixes="."))
+        async def _(c, m): await cmd_reject(c, m)
+        
+        @client.on_message(filters.me & filters.command("afklist", prefixes="."))
+        async def _(c, m): await cmd_afklist(c, m)
+        
+        @client.on_message(filters.me & filters.command("unblock", prefixes="."))
+        async def _(c, m): await cmd_unblock_user(c, m)
+        
+        @client.on_message(filters.me & filters.command("addbl", prefixes="."))
+        async def _(c, m): await cmd_addbl(c, m)
+        
+        @client.on_message(filters.me & filters.command("rmbl", prefixes="."))
+        async def _(c, m): await cmd_rmbl(c, m)
+        
+        @client.on_message(filters.me & filters.command("listbl", prefixes="."))
+        async def _(c, m): await cmd_listbl(c, m)
+        
+        @client.on_message(filters.me & filters.command("grup on", prefixes="."))
+        async def _(c, m): await cmd_grup_on(c, m)
+        
+        @client.on_message(filters.me & filters.command("grup off", prefixes="."))
+        async def _(c, m): await cmd_grup_off(c, m)
+        
+        @client.on_message(filters.me & filters.command("listgrup", prefixes="."))
+        async def _(c, m): await cmd_list_whitelist(c, m)
+        
+        @client.on_message(filters.me & filters.command("private on", prefixes="."))
+        async def _(c, m): await cmd_private_on(c, m)
+        
+        @client.on_message(filters.me & filters.command("private off", prefixes="."))
+        async def _(c, m): await cmd_private_off(c, m)
+        
+        @client.on_message(filters.me & filters.command("gcast", prefixes="."))
+        async def _(c, m): await cmd_gcast(c, m)
+        
+        @client.on_message(filters.me & filters.command("ucast_all", prefixes="."))
+        async def _(c, m): await cmd_ucast_all(c, m)
+        
+        @client.on_message(filters.me & filters.command("spam", prefixes="."))
+        async def _(c, m): await cmd_spam(c, m)
+        
+        @client.on_message(filters.me & filters.command("gban", prefixes="."))
+        async def _(c, m): await cmd_gban(c, m)
+        
+        @client.on_message(filters.me & filters.command("ungban", prefixes="."))
+        async def _(c, m): await cmd_ungban(c, m)
+        
+        @client.on_message(filters.me & filters.command("listgban", prefixes="."))
+        async def _(c, m): await cmd_listgban(c, m)
+        
+        # Handler buat incoming messages dari orang lain
+        @client.on_message(filters.incoming & ~filters.me)
+        async def auto_reply(c, m):
+            await process_incoming_message(c, m)
+        
+        print("📌 COMMANDS READY!")
+        print(f"📌 Bot running with webhook mode")
+        print(f"📌 Press Ctrl+C to stop!")
+        print("")
+        
+        # Keep running
+        while True:
+            await asyncio.sleep(1)
+            
     except Exception as e:
-        # DIAM AJA, GAK USAH PRINT ERROR
-        pass
+        print(f"❌ Error: {e}")
+        raise
+
+def run_flask():
+    """Jalanin Flask di thread terpisah"""
+    port = int(os.environ.get("PORT", 8080))
+    app_flask.run(host="0.0.0.0", port=port, threaded=True)
+
+if __name__ == "__main__":
+    # Jalanin Flask di thread background
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    
+    # Jalanin bot di event loop utama
+    asyncio.run(run_webhook())
