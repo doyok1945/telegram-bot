@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies system yang mungkin dibutuhin (opsional, tapi aman)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements dulu biar cachingnya efisien
+COPY requirements.txt .
+
+# Install library Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy semua file bot termasuk userbotV2.py
+COPY . .
+
+# Perintah buat jalanin userbotV2.py
+CMD ["python", "userbotV2.py"]
