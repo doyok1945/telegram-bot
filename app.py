@@ -1,5 +1,5 @@
 """
-THE TAMERS USERBOT v2.0 - BLOOD EDITION
+THE TAMERS USERBOT v2.0 - BLOOD EDITION (FIXED GRUP ON/OFF)
 Railway Ready | No Border | Full Blood | Toxic AF
 """
 
@@ -13,10 +13,10 @@ import os
 import threading
 import time
 from datetime import datetime
-from flask import Flask, request
+from flask import Flask
 
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid
+from pyrogram.errors import FloodWait, UserIsBlocked
 from pyrogram.types import Message
 from pyrogram.enums import ChatType
 
@@ -26,11 +26,11 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
 # ========================== KONFIG DARAH ==========================
-API_ID = int(os.getenv("API_ID", 32584214))
-API_HASH = os.getenv("API_HASH", "6a59dd69d7e9db9916ff9c07eb237076")
+API_ID = int(os.getenv("API_ID", 0))
+API_HASH = os.getenv("API_HASH", "")
 SESSION_STRING = os.getenv("SESSION_STRING", "")
-if not SESSION_STRING:
-    print("🩸 SESSION_STRING NGGAK ADA, TAI!")
+if not SESSION_STRING or not API_ID or not API_HASH:
+    print("🩸 SESSION_STRING, API_ID, API_HASH WAJIB DI SET TAI!")
     sys.exit(1)
 
 BLACKLIST_FILE = "blacklist.json"
@@ -187,21 +187,24 @@ async def cmd_gcast(client, message):
         return
     msg = await client.send_message(message.chat.id, f"🩸 GCAST BERDARAH\n┃ target {total} grup\n{blood_progress(0,total)}")
     ok = fail = 0
-    for i, d in enumerate(client.get_dialogs()):
+    idx = 0
+    async for d in client.get_dialogs():
         if d.chat.type in [ChatType.GROUP, ChatType.SUPERGROUP] and d.chat.id not in BLACKLIST:
             try:
                 await client.send_message(d.chat.id, teks)
                 ok += 1
             except:
                 fail += 1
-            if (i+1) % 5 == 0:
-                await msg.edit(f"🩸 GCAST\n┃ {ok}✅ {fail}❌\n{blood_progress(i+1,total)}")
+            idx += 1
+            if idx % 5 == 0:
+                await msg.edit(f"🩸 GCAST\n┃ {ok}✅ {fail}❌\n{blood_progress(idx,total)}")
             await asyncio.sleep(0.3)
     await msg.edit(f"🩸 GCAST SELESAI\n┃ sukses {ok}\n┃ gagal {fail}\n🩸 {BRAND}")
 
 async def cmd_gban(client, message):
     global GBAN
     target = None
+    name = None
     if message.reply_to_message and message.reply_to_message.from_user:
         target = message.reply_to_message.from_user.id
         name = message.reply_to_message.from_user.first_name
@@ -240,6 +243,7 @@ async def cmd_gban(client, message):
 async def cmd_ungban(client, message):
     global GBAN
     target = None
+    name = None
     if message.reply_to_message and message.reply_to_message.from_user:
         target = message.reply_to_message.from_user.id
         name = message.reply_to_message.from_user.first_name
@@ -312,6 +316,46 @@ async def cmd_spam(client, message):
         await asyncio.sleep(0.2)
     await status.edit(f"🩸 SPAM DONE\n┃ {count} pesan terkirim.\n🩸 {BRAND}")
 
+# ========================== PERINTAH GRUP ON/OFF YANG BENER ==========================
+async def cmd_grup_on(client, message):
+    if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
+        await message.reply("🩸 ini bukan grup tai.")
+        return
+    WHITELIST.add(message.chat.id)
+    save_json(WHITELIST_FILE, WHITELIST)
+    await message.reply(f"🩸 **AUTO REPLY ON**\n┃ {message.chat.title} sekarang dibales.\n🩸 {BRAND}")
+
+async def cmd_grup_off(client, message):
+    if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
+        await message.reply("🩸 ini bukan grup tai.")
+        return
+    WHITELIST.discard(message.chat.id)
+    save_json(WHITELIST_FILE, WHITELIST)
+    await message.reply(f"🩸 **AUTO REPLY OFF**\n┃ {message.chat.title} gak digubris.\n🩸 {BRAND}")
+
+async def cmd_private_on(client, message):
+    global AUTO_REPLY_PRIVATE
+    AUTO_REPLY_PRIVATE = True
+    await message.reply(f"🩸 **PRIVATE AUTO ON**\n┃ dm bakal dibales.\n🩸 {BRAND}")
+
+async def cmd_private_off(client, message):
+    global AUTO_REPLY_PRIVATE
+    AUTO_REPLY_PRIVATE = False
+    await message.reply(f"🩸 **PRIVATE AUTO OFF**\n┃ dm gak digubris.\n🩸 {BRAND}")
+
+async def cmd_list_whitelist(client, message):
+    if not WHITELIST:
+        await message.reply("🩸 kosong. pake .grup on dulu tai.")
+        return
+    txt = "🩸 **AUTO REPLY GRUP**\n"
+    for gid in list(WHITELIST)[:30]:
+        try:
+            chat = await client.get_chat(gid)
+            txt += f"┃ {chat.title}\n"
+        except:
+            txt += f"┃ {gid}\n"
+    await message.reply(txt)
+
 # ========================== AUTO REPLY DARAH ==========================
 async def blood_reply_handler(client, message):
     if message.text and message.text.startswith('.'):
@@ -370,13 +414,13 @@ def run_flask():
 
 # ========================== MAIN ==========================
 async def main():
-    global AUTO_REPLY_PRIVATE, WHITELIST, BLACKLIST, GBAN
+    global WHITELIST, BLACKLIST, GBAN, AUTO_REPLY_PRIVATE
     WHITELIST = load_json(WHITELIST_FILE, set())
     BLACKLIST = load_json(BLACKLIST_FILE, set())
     GBAN = load_json(GBAN_FILE, set())
 
     print("🩸"*30)
-    print("🩸 THE TAMERS BLOOD EDITION")
+    print("🩸 THE TAMERS BLOOD EDITION (FIXED GRUP ON/OFF)")
     print("🩸 RAILWAY | TOXIC | GBAN")
     print(f"🩸 GBAN : {len(GBAN)} korban")
     print("🩸"*30)
@@ -387,7 +431,6 @@ async def main():
     print(f"🩸 LOGIN : {me.first_name} (@{me.username if me.username else 'none'})")
     print("🩸 ALL COMMANDS ACTIVE")
 
-    # Commands
     @app.on_message(filters.me & filters.command("ping", prefixes="."))
     async def _(c,m): await cmd_ping(c,m)
     @app.on_message(filters.me & filters.command("status", prefixes="."))
@@ -412,6 +455,17 @@ async def main():
     async def _(c,m): await cmd_listbl(c,m)
     @app.on_message(filters.me & filters.command("spam", prefixes="."))
     async def _(c,m): await cmd_spam(c,m)
+
+    @app.on_message(filters.me & filters.command("grup on", prefixes="."))
+    async def _(c,m): await cmd_grup_on(c,m)
+    @app.on_message(filters.me & filters.command("grup off", prefixes="."))
+    async def _(c,m): await cmd_grup_off(c,m)
+    @app.on_message(filters.me & filters.command("private on", prefixes="."))
+    async def _(c,m): await cmd_private_on(c,m)
+    @app.on_message(filters.me & filters.command("private off", prefixes="."))
+    async def _(c,m): await cmd_private_off(c,m)
+    @app.on_message(filters.me & filters.command("listgrup", prefixes="."))
+    async def _(c,m): await cmd_list_whitelist(c,m)
 
     @app.on_message(filters.incoming & ~filters.me)
     async def _(c,m): await blood_reply_handler(c,m)
