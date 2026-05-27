@@ -1,6 +1,5 @@
 """
 THE TAMERS USERBOT v2.1 - RAILWAY PROOF EDITION
-No Memory Leak | No Crash | Auto Restart Protection
 """
 
 import sys
@@ -20,23 +19,18 @@ from pyrogram.errors import FloodWait, UserIsBlocked
 from pyrogram.types import Message
 from pyrogram.enums import ChatType
 
-# ========================== MATIKAN SEMUA LOG ==========================
 warnings.filterwarnings("ignore")
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("werkzeug").setLevel(logging.ERROR)
-logging.getLogger("asyncio").setLevel(logging.ERROR)
-logging.getLogger("urllib3").setLevel(logging.ERROR)
 
-# ========================== BACA ENV ==========================
 API_ID = int(os.getenv("API_ID", 0))
 API_HASH = os.getenv("API_HASH", "")
 SESSION_STRING = os.getenv("SESSION_STRING", "")
 
 if not API_ID or not API_HASH or not SESSION_STRING:
-    print("🩸 ERROR: API_ID, API_HASH, SESSION_STRING harus di set di Railway Env!")
+    print("🩸 GOBLOK! SET API_ID, API_HASH, SESSION_STRING DI RAILWAY ENV!")
     sys.exit(1)
 
-# ========================== KONFIGURASI ==========================
 DATA_DIR = "data"
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -46,9 +40,7 @@ GBAN_FILE = f"{DATA_DIR}/gban.json"
 
 BOT_START = time.time()
 BRAND = "THE TAMERS"
-VERSION = "2.1.0"
 
-# ========================== DATA GLOBAL ==========================
 blacklist = set()
 whitelist = set()
 gban = set()
@@ -59,14 +51,9 @@ auto_reply_private = True
 me_cache = None
 me_cache_time = 0
 
-# ========================== TOXIC REPLIES ==========================
-BLOOD_REPLIES = [
-    "🩸 diam.", "🩸 hah?", "🩸 y.", "🩸 iya.", "🩸 oke.",
-    "🩸 sbr.", "🩸 nguik.", "🩸 Y.", "🩸 mampus.",
-    "🩸 bacot.", "🩸 goblok.", "🩸 tai.", "🩸 diem."
-]
-MENTION_BLOOD = ["🩸 hah? DM.", "🩸 nyari apa?", "🩸 berisik.", "🩸 bacot lo."]
-AFK_BLOOD = "🩸 **THE TAMERS** lagi AFK. Lo sabar. Atau lo gue setrum."
+BLOOD_REPLIES = ["🩸 diam.", "🩸 hah?", "🩸 y.", "🩸 iya.", "🩸 oke.", "🩸 bacot.", "🩸 goblok.", "🩸 tai."]
+MENTION_BLOOD = ["🩸 hah? DM.", "🩸 nyari apa?", "🩸 berisik."]
+AFK_BLOOD = "🩸 **THE TAMERS** lagi AFK."
 
 def random_blood(): return random.choice(BLOOD_REPLIES)
 def random_mention(): return random.choice(MENTION_BLOOD)
@@ -82,20 +69,9 @@ def get_uptime():
     if m > 0: return f"{m}m {s}s"
     return f"{s}s"
 
-def blood_progress(curr, total, bar_len=8):
-    if total <= 0: return "🩸░░░░░░░░ 0%"
-    percent = int(curr / total * 100)
-    filled = int(bar_len * curr / total)
-    bar = "🩸" * filled + "░" * (bar_len - filled)
-    return f"{bar} {percent}%"
-
-# ========================== JSON LOAD/SAVE ==========================
 def save_json(filepath, data_set):
-    try:
-        with open(filepath, "w") as f:
-            json.dump({"data": list(data_set)}, f)
-    except Exception as e:
-        print(f"⚠️ Gagal save {filepath}: {e}")
+    with open(filepath, "w") as f:
+        json.dump({"data": list(data_set)}, f)
 
 def load_json(filepath):
     if os.path.exists(filepath):
@@ -106,7 +82,6 @@ def load_json(filepath):
             pass
     return set()
 
-# ========================== CACHE ME ==========================
 async def get_cached_me(client):
     global me_cache, me_cache_time
     if not me_cache or time.time() - me_cache_time > 300:
@@ -114,60 +89,30 @@ async def get_cached_me(client):
         me_cache_time = time.time()
     return me_cache
 
-# ========================== PERINTAH ==========================
 async def cmd_ping(client, message):
     start = time.time()
     await asyncio.sleep(0.03)
     ping = int((time.time() - start) * 1000)
     me = await get_cached_me(client)
-    status = "🩸 CEPAT" if ping < 80 else "🩸 NGOPI" if ping < 200 else "🩸 LEMOT"
-    await message.reply(
-        f"🩸 **PING**\n"
-        f"┃ respon : {ping} ms\n"
-        f"┃ status : {status}\n"
-        f"┃ uptime : {get_uptime()}\n"
-        f"┃ tamer  : {me.first_name}\n"
-        f"🩸 {BRAND}"
-    )
+    await message.reply(f"🩸 **PING**\n┃ {ping} ms\n┃ uptime: {get_uptime()}\n┃ {me.first_name}\n🩸 {BRAND}")
 
 async def cmd_status(client, message):
     me = await get_cached_me(client)
-    await message.reply(
-        f"🩸 **STATUS**\n"
-        f"┃ tamer    : {me.first_name}\n"
-        f"┃ username : @{me.username or 'none'}\n"
-        f"┃ id       : `{me.id}`\n"
-        f"┃ uptime   : {get_uptime()}\n"
-        f"┃ blacklist: {len(blacklist)}\n"
-        f"┃ whitelist: {len(whitelist)}\n"
-        f"┃ gban     : {len(gban)}\n"
-        f"┃ afk      : {'ON' if afk_mode else 'OFF'}\n"
-        f"┃ autoreply: {'ON' if auto_reply_private else 'OFF'}\n"
-        f"🩸 {BRAND} {VERSION}"
-    )
+    await message.reply(f"🩸 **STATUS**\n┃ {me.first_name}\n┃ @{me.username or 'none'}\n┃ blacklist: {len(blacklist)}\n┃ whitelist: {len(whitelist)}\n┃ gban: {len(gban)}\n┃ uptime: {get_uptime()}\n🩸 {BRAND}")
 
 async def cmd_info(client, message):
     me = await get_cached_me(client)
-    nama = me.first_name + (f" {me.last_name}" if me.last_name else "")
-    await message.reply(
-        f"🩸 **INFO**\n"
-        f"┃ nama     : {nama}\n"
-        f"┃ username : @{me.username or 'none'}\n"
-        f"┃ id       : `{me.id}`\n"
-        f"┃ premium  : {'YA' if getattr(me, 'is_premium', False) else 'TIDAK'}\n"
-        f"┃ uptime   : {get_uptime()}\n"
-        f"🩸 {BRAND}"
-    )
+    await message.reply(f"🩸 **INFO**\n┃ {me.first_name}\n┃ id: `{me.id}`\n┃ premium: {'YA' if getattr(me, 'is_premium', False) else 'TIDAK'}\n┃ uptime: {get_uptime()}\n🩸 {BRAND}")
 
 async def cmd_afk(client, message):
     global afk_mode
     afk_mode = True
-    await message.reply("🩸 **AFK ON**\n┃ gue pergi. ketik .unafk.\n🩸 THE TAMERS")
+    await message.reply("🩸 **AFK ON**\n🩸 THE TAMERS")
 
 async def cmd_unafk(client, message):
     global afk_mode
     afk_mode = False
-    await message.reply(f"🩸 **AFK OFF**\n┃ gue balik ({get_uptime()})\n🩸 THE TAMERS")
+    await message.reply(f"🩸 **AFK OFF** ({get_uptime()})\n🩸 THE TAMERS")
 
 async def cmd_grup_on(client, message):
     if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -201,12 +146,12 @@ async def cmd_listgrup(client, message):
 async def cmd_private_on(client, message):
     global auto_reply_private
     auto_reply_private = True
-    await message.reply("🩸 **PRIVATE ON**\n┃ DM dibales.\n🩸 {BRAND}")
+    await message.reply("🩸 **PRIVATE ON**")
 
 async def cmd_private_off(client, message):
     global auto_reply_private
     auto_reply_private = False
-    await message.reply("🩸 **PRIVATE OFF**\n┃ DM gak digubris.\n🩸 {BRAND}")
+    await message.reply("🩸 **PRIVATE OFF**")
 
 async def cmd_addbl(client, message):
     if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -214,13 +159,13 @@ async def cmd_addbl(client, message):
         return
     blacklist.add(message.chat.id)
     save_json(BLACKLIST_FILE, blacklist)
-    await message.reply(f"🩸 **BLACKLIST**\n┃ {message.chat.title}\n🩸 {BRAND}")
+    await message.reply(f"🩸 **BLACKLIST**\n┃ {message.chat.title}")
 
 async def cmd_rmbl(client, message):
     if message.chat.id in blacklist:
         blacklist.discard(message.chat.id)
         save_json(BLACKLIST_FILE, blacklist)
-        await message.reply(f"🩸 **UNBLACKLIST**\n┃ {message.chat.title}\n🩸 {BRAND}")
+        await message.reply(f"🩸 **REMOVED**\n┃ {message.chat.title}")
     else:
         await message.reply("🩸 gak ada di blacklist.")
 
@@ -262,14 +207,13 @@ async def cmd_gban(client, message):
     if target in gban:
         await message.reply(f"🩸 {name} udah kena GBAN.")
         return
-    await message.reply(f"🩸 **GBAN**\n┃ {name}\n{blood_progress(0,3)}")
     try:
         await client.block_user(target)
     except:
         pass
     gban.add(target)
     save_json(GBAN_FILE, gban)
-    await message.reply(f"🩸 **GBAN DONE**\n┃ {name} telah dihapus.\n🩸 {BRAND}")
+    await message.reply(f"🩸 **GBAN DONE**\n┃ {name}\n🩸 {BRAND}")
 
 async def cmd_ungban(client, message):
     global gban
@@ -291,7 +235,7 @@ async def cmd_ungban(client, message):
         return
     gban.discard(target)
     save_json(GBAN_FILE, gban)
-    await message.reply(f"🩸 **UNGBAN**\n┃ {name} dibebaskan.\n🩸 {BRAND}")
+    await message.reply(f"🩸 **UNGBAN**\n┃ {name}")
 
 async def cmd_listgban(client, message):
     if not gban:
@@ -301,12 +245,11 @@ async def cmd_listgban(client, message):
     for uid in list(gban)[:20]:
         try:
             u = await client.get_users(uid)
-            txt += f"┃ {u.first_name} (@{u.username or 'none'})\n"
+            txt += f"┃ {u.first_name}\n"
         except:
             txt += f"┃ {uid}\n"
     await message.reply(txt)
 
-# ========================== AUTO REPLY ==========================
 async def auto_reply_handler(client, message):
     if not message.from_user or message.from_user.is_bot:
         return
@@ -346,12 +289,11 @@ async def auto_reply_handler(client, message):
             return
         await message.reply(random_blood())
 
-# ========================== FLASK UNTUK KEEP ALIVE ==========================
 flask_app = Flask(__name__)
 
 @flask_app.route("/")
 def home():
-    return "🩸 THE TAMERS USERBOT RUNNING", 200
+    return "🩸 THE TAMERS RUNNING", 200
 
 @flask_app.route("/health")
 def health():
@@ -361,7 +303,6 @@ def run_flask():
     port = int(os.environ.get("PORT", 8080))
     flask_app.run(host="0.0.0.0", port=port, threaded=False)
 
-# ========================== SHUTDOWN HANDLER ==========================
 def signal_handler(sig, frame):
     print("🩸 Shutting down...")
     sys.exit(0)
@@ -369,10 +310,8 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-# ========================== MAIN ==========================
 async def main():
     global whitelist, blacklist, gban
-    
     whitelist = load_json(WHITELIST_FILE)
     blacklist = load_json(BLACKLIST_FILE)
     gban = load_json(GBAN_FILE)
@@ -389,7 +328,6 @@ async def main():
     print(f"🩸 LOGIN: {me.first_name} (@{me.username or 'none'})")
     print("🩸 BOT SIAP")
     
-    # REGISTER COMMANDS
     @app.on_message(filters.me & filters.command("ping", prefixes="."))
     async def _(c,m): await cmd_ping(c,m)
     @app.on_message(filters.me & filters.command("status", prefixes="."))
@@ -427,7 +365,6 @@ async def main():
     async def _(c,m): await auto_reply_handler(c,m)
     
     print("🩸 ALL COMMANDS LOADED")
-    print("🩸 KEEP ALIVE ACTIVE")
     
     while True:
         await asyncio.sleep(60)
