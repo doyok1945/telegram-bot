@@ -1,6 +1,6 @@
 """
-THE TAMERS USERBOT v2.0 - RAILWAY EDITION
-Udah pake string session, ga butuh file .session lagi tai
+THE TAMERS USERBOT v3.1 - SELECTIVE SUPER BRUTAL EDITION
+Super Brutal per grup! Kayak .grup on tapi lebih brutal!
 """
 
 import sys
@@ -19,22 +19,31 @@ from typing import Set
 from flask import Flask, request
 
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, SessionRevoked
+from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, SessionRevoked, RPCError
 from pyrogram.types import Message
 from pyrogram.enums import ChatType
 
 # =============================================
-# MATIKAN SEMUA LOG YANG GAK PENTING
+# MATIKAN SEMUA LOG (GAK ADA YANG KELIHATAN)
 # =============================================
 warnings.filterwarnings("ignore")
-logging.getLogger("pyrogram").setLevel(logging.CRITICAL)
-logging.getLogger("pyrogram.client").setLevel(logging.CRITICAL)
-logging.getLogger("pyrogram.session").setLevel(logging.CRITICAL)
-logging.getLogger("pyrogram.dispatcher").setLevel(logging.CRITICAL)
-logging.getLogger("pyrogram.connection").setLevel(logging.CRITICAL)
-logging.getLogger("pyrogram.storage").setLevel(logging.CRITICAL)
-logging.getLogger("asyncio").setLevel(logging.CRITICAL)
-logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+logging.getLogger("pyrogram").setLevel(logging.ERROR)
+logging.getLogger("pyrogram.client").setLevel(logging.ERROR)
+logging.getLogger("pyrogram.session").setLevel(logging.ERROR)
+logging.getLogger("pyrogram.dispatcher").setLevel(logging.ERROR)
+logging.getLogger("pyrogram.connection").setLevel(logging.ERROR)
+logging.getLogger("pyrogram.storage").setLevel(logging.ERROR)
+logging.getLogger("asyncio").setLevel(logging.ERROR)
+logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
+# Matiin semua output error
+sys.stderr = open(os.devnull, 'w')
+
+# Flask app
+app_flask = Flask(__name__)
+
+# Client global
+client = None
 
 # =============================================
 # KONFIGURASI
@@ -45,21 +54,17 @@ BLACKLIST_FILE = "blacklist.json"
 SETTINGS_FILE = "settings.json"
 WHITELIST_FILE = "whitelist.json"
 GBAN_LIST_FILE = "gban_list.json"
+SUPERBRUTAL_FILE = "superbrutal_groups.json"  # FILE BARU UNTUK SUPER BRUTAL GROUPS
 BOT_START_TIME = time.time()
 BRAND = "THE TAMERS"
-VERSION = "2.0.0"
-
-# Flask app
-app_flask = Flask(__name__)
-
-# Client global
-client = None
+VERSION = "3.1.0"
 
 # =============================================
 # DATA GLOBAL
 # =============================================
 BLOCKED_GROUPS = set()
 WHITELIST_GROUPS = set()
+SUPERBRUTAL_GROUPS = set()  # GRUP YANG SUPER BRUTAL NYALA
 settings = {}
 is_afk = False
 afk_pending_users = {}
@@ -67,8 +72,27 @@ afk_approved_users = set()
 GBAN_USERS = set()
 
 # =============================================
-# SIMPLE REPLIES
+# BRUTAL SPAM REPLIES (GAHAR & SERAM)
 # =============================================
+BRUTAL_REPLIES = [
+    "💀 **SPAM DETECTED! YOU ARE CURSED!** 💀",
+    "🔥 **THE TAMERS DON'T TOLERATE SPAM!** 🔥",
+    "👹 **YOUR MESSAGE IS TRASH! GET LOST!** 👹",
+    "💀 **SPAM = INSTANT REPORT + BLOCK!** 💀",
+    "🔥 **WASTE YOUR TIME ELSEWHERE, SPAMMER!** 🔥",
+    "👹 **THE TAMERS HAVE SPOKEN: YOU ARE NOTHING!** 👹",
+    "💀 **ENJOY YOUR REPORT TO @SpamBot!** 💀",
+    "🔥 **YOUR ACCOUNT IS MARKED! GOODBYE!** 🔥",
+    "👹 **SPAMMERS ARE NOT WELCOME HERE!** 👹",
+    "💀 **THE TAMERS WILL HAUNT YOUR ACCOUNT!** 💀",
+    "🔥 **GO F*CK YOURSELF, SPAMMER!** 🔥",
+    "👹 **YOUR IP HAS BEEN LOGGED!** 👹",
+    "💀 **SAY GOODBYE TO YOUR TELEGRAM ACCOUNT!** 💀",
+    "🔥 **THE TAMERS ARE WATCHING YOU!** 🔥",
+    "👹 **SPAM = AUTOMATIC GBAN!** 👹",
+    "💀 **YOU'VE BEEN MARKED BY THE TAMERS!** 💀",
+]
+
 SIMPLE_REPLIES = [
     "hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀",
     "hmm 🦴", "ya 🐍", "Y 🔥", "iyaaa ☠️", "oke 👻",
@@ -77,6 +101,9 @@ SIMPLE_REPLIES = [
 ]
 MENTION_REPLIES = ["hmm? 💀", "ya? 🦴", "iyeee? ☠️", "ada apa? 👻", "💀?", "👹?"]
 AFK_REPLY = "💀 **THE TAMERS** sedang AFK, sabar takut nanti kena kutukan! 🦴"
+
+def get_brutal_reply():
+    return random.choice(BRUTAL_REPLIES)
 
 def get_simple_reply():
     return random.choice(SIMPLE_REPLIES)
@@ -143,6 +170,19 @@ def load_whitelist():
 def save_whitelist(whitelist):
     with open(WHITELIST_FILE, "w") as f:
         json.dump({"whitelisted_groups": list(whitelist)}, f, indent=4)
+
+def load_superbrutal_groups():
+    if os.path.exists(SUPERBRUTAL_FILE):
+        try:
+            with open(SUPERBRUTAL_FILE, "r") as f:
+                return set(json.load(f).get("superbrutal_groups", []))
+        except:
+            pass
+    return set()
+
+def save_superbrutal_groups(groups):
+    with open(SUPERBRUTAL_FILE, "w") as f:
+        json.dump({"superbrutal_groups": list(groups)}, f, indent=4)
 
 def load_settings():
     default = {"auto_reply_group": True, "auto_reply_private": True}
@@ -231,6 +271,8 @@ async def cmd_status(client, message):
 {info_line("Channels", f"{total_channels} channels", "📢")}
 {info_line("Uptime", get_uptime(), "⏱️")}
 {info_line("Blacklist", f"{len(BLOCKED_GROUPS)} groups", "🚫")}
+{info_line("Whitelist", f"{len(WHITELIST_GROUPS)} groups", "✅")}
+{info_line("Super Brutal", f"{len(SUPERBRUTAL_GROUPS)} groups", "🔥")}
 {info_line("Auto Reply", "ON" if settings.get('auto_reply_private', True) else "OFF", "🤖")}
 {BRAND} v{VERSION} 🦴
 """
@@ -270,6 +312,111 @@ async def cmd_unafk(client, message):
     global is_afk
     is_afk = False
     await message.reply(f"{title_bar('AFK MODE', '✅')}\n{info_line('Status', 'BACK ONLINE', '┃')}\n{info_line('Duration', get_uptime(), '⏰')}\n👋 I'm back!\n{BRAND} 🦴")
+
+# =============================================
+# COMMAND: SUPER BRUTAL (PER GRUP - KAYAK .grup on)
+# =============================================
+async def cmd_superbrutal_on(client, message):
+    """Aktifin Super Brutal di grup ini (kayak .grup on)"""
+    global SUPERBRUTAL_GROUPS
+    
+    if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
+        await message.reply("❌ **GAGAL!**\nCommand ini harus diketik di dalam grup goblok!")
+        return
+    
+    chat_id = message.chat.id
+    chat_title = message.chat.title or "Grup Tanpa Nama"
+    
+    if chat_id in SUPERBRUTAL_GROUPS:
+        await message.reply(f"""
+{title_bar("SUPER BRUTAL", "⚠️")}
+{info_line("Group", chat_title, "📌")}
+{info_line("Status", "ALREADY ACTIVE", "🔥")}
+
+💀 Super Brutal already ON in this group!
+{BRAND} 🦴
+""")
+        return
+    
+    SUPERBRUTAL_GROUPS.add(chat_id)
+    save_superbrutal_groups(SUPERBRUTAL_GROUPS)
+    
+    await message.reply(f"""
+{title_bar("SUPER BRUTAL", "🔥")}
+{info_line("Group", chat_title, "📌")}
+{info_line("Status", "ENABLED", "✅")}
+
+💀 **THIS GROUP IS NOW UNDER SUPER BRUTAL MODE!**
+🔥 EVERY SINGLE MESSAGE WILL BE REPLIED!
+👹 SPAMMERS WILL BE DESTROYED!
+
+{BRAND} 💀
+""")
+
+async def cmd_superbrutal_off(client, message):
+    """Matiin Super Brutal di grup ini"""
+    global SUPERBRUTAL_GROUPS
+    
+    if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
+        await message.reply("❌ **GAGAL!**\nCommand ini harus diketik di dalam grup goblok!")
+        return
+    
+    chat_id = message.chat.id
+    chat_title = message.chat.title or "Grup Tanpa Nama"
+    
+    if chat_id not in SUPERBRUTAL_GROUPS:
+        await message.reply(f"""
+{title_bar("SUPER BRUTAL", "⚠️")}
+{info_line("Group", chat_title, "📌")}
+{info_line("Status", "NOT ACTIVE", "❌")}
+
+💀 Super Brutal not active in this group!
+{BRAND} 🦴
+""")
+        return
+    
+    SUPERBRUTAL_GROUPS.discard(chat_id)
+    save_superbrutal_groups(SUPERBRUTAL_GROUPS)
+    
+    await message.reply(f"""
+{title_bar("SUPER BRUTAL", "❌")}
+{info_line("Group", chat_title, "📌")}
+{info_line("Status", "DISABLED", "🚫")}
+
+💀 Super Brutal has been turned OFF in this group!
+{BRAND} 🦴
+""")
+
+async def cmd_list_superbrutal(client, message):
+    """Lihat daftar grup yang Super Brutal aktif"""
+    if not SUPERBRUTAL_GROUPS:
+        await message.reply(f"""
+{title_bar("SUPER BRUTAL LIST", "📋")}
+┃
+┃ 🔥 **No groups with Super Brutal active**
+┃
+┃ 📌 Use `.superbrutal on` in a group to activate!
+┃
+{BRAND} 🦴
+""")
+        return
+    
+    lines = []
+    for gid in list(SUPERBRUTAL_GROUPS)[:30]:
+        try:
+            chat = await client.get_chat(gid)
+            lines.append(f"┃ ▸ {chat.title}")
+        except:
+            lines.append(f"┃ ▸ ID: {gid}")
+    
+    await message.reply(f"""
+{title_bar("SUPER BRUTAL LIST", "📋")}
+{info_line("Total", f"{len(SUPERBRUTAL_GROUPS)} groups", "🔥")}
+┃
+{chr(10).join(lines)}
+┃
+{BRAND} 💀
+""")
 
 # =============================================
 # COMMAND: GCAST
@@ -326,7 +473,7 @@ async def cmd_gcast(client, message):
             try:
                 await client.send_message(chat.id, pesan)
                 berhasil += 1
-            except Exception as e:
+            except:
                 gagal += 1
             
             processed += 1
@@ -427,7 +574,7 @@ async def cmd_spam(client, message):
         return
     
     try:
-        count = min(int(message.command[1]), 50)
+        count = min(int(message.command[1]), 100)
     except:
         await message.reply("❌ Jumlah harus angka!")
         return
@@ -446,7 +593,7 @@ async def cmd_spam(client, message):
     
     for i in range(count):
         await client.send_message(message.chat.id, teks)
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.2)
         
         if (i + 1) % 5 == 0 or (i + 1) == count:
             await status.edit(f"{title_bar('SPAM', '🔄')}\nTarget: {count} messages\n{progress_bar(i + 1, count)}\nSending...")
@@ -454,7 +601,7 @@ async def cmd_spam(client, message):
     await status.edit(f"{title_bar('SPAM DONE', '✅')}\nSent {count} messages!\n{BRAND} 🦴")
 
 # =============================================
-# COMMAND LAINNYA
+# COMMAND LAINNYA (WHITELIST, BLACKLIST, DLL)
 # =============================================
 async def cmd_approve(client, message):
     global afk_pending_users, afk_approved_users
@@ -821,16 +968,20 @@ async def cmd_listgban(client, message):
     await message.reply(f"{title_bar('GBAN LIST', '📋')}\nTotal: {len(GBAN_USERS)}\n" + "\n".join(user_list) + f"\n{BRAND} 🦴")
 
 # =============================================
-# HANDLER BALAS OTOMATIS
+# HANDLER BALAS OTOMATIS (SUPER BRUTAL PER GRUP!)
 # =============================================
 async def process_incoming_message(client, message):
-    global is_afk, afk_pending_users, afk_approved_users, WHITELIST_GROUPS, BLOCKED_GROUPS, GBAN_USERS
+    global is_afk, afk_pending_users, afk_approved_users, WHITELIST_GROUPS, BLOCKED_GROUPS, GBAN_USERS, SUPERBRUTAL_GROUPS
     
+    # SKIP COMMAND
     if message.text and message.text.startswith('.'):
         return
+    
+    # SKIP BOT & CHANNEL
     if not message.from_user or message.from_user.is_bot or message.chat.type == ChatType.CHANNEL or message.sender_chat:
         return
     
+    # CEK GBAN
     if message.from_user.id in GBAN_USERS:
         try:
             await client.block_user(message.from_user.id)
@@ -842,72 +993,101 @@ async def process_incoming_message(client, message):
     auto_reply_private = current_settings.get("auto_reply_private", True)
     chat_type = message.chat.type
     
-    try:
-        if is_afk and chat_type == ChatType.PRIVATE:
-            user_id = message.from_user.id
+    # LOOP UNTUK PASTIKAN BALASAN TERKIRIM
+    max_retry = 3
+    for attempt in range(max_retry):
+        try:
+            # AFK MODE
+            if is_afk and chat_type == ChatType.PRIVATE:
+                user_id = message.from_user.id
+                
+                if user_id in afk_approved_users:
+                    if auto_reply_private:
+                        await message.reply(get_simple_reply())
+                        break
+                    return
+                
+                if user_id in afk_pending_users and afk_pending_users[user_id].get("blocked", False):
+                    return
+                
+                if user_id not in afk_pending_users:
+                    afk_pending_users[user_id] = {"count": 0, "warned": False, "blocked": False}
+                
+                afk_pending_users[user_id]["count"] += 1
+                count = afk_pending_users[user_id]["count"]
+                
+                if count >= 5:
+                    if not afk_pending_users[user_id].get("blocked", False):
+                        try:
+                            await client.block_user(user_id)
+                            afk_pending_users[user_id]["blocked"] = True
+                            await message.reply("💀 SPAM! You have been blocked by THE TAMERS!")
+                            break
+                        except:
+                            pass
+                    return
+                
+                if count >= 3 and not afk_pending_users[user_id].get("warned", False):
+                    afk_pending_users[user_id]["warned"] = True
+                    await message.reply("⚠️ WARNING! Don't spam, or THE TAMERS will block you!")
+                    break
+                
+                await message.reply(AFK_REPLY)
+                break
             
-            if user_id in afk_approved_users:
+            # PRIVATE CHAT
+            if chat_type == ChatType.PRIVATE:
                 if auto_reply_private:
-                    await message.reply(get_simple_reply())
+                    await message.reply(get_brutal_reply())
+                    break
                 return
             
-            if user_id in afk_pending_users and afk_pending_users[user_id].get("blocked", False):
-                return
-            
-            if user_id not in afk_pending_users:
-                afk_pending_users[user_id] = {"count": 0, "warned": False, "blocked": False}
-            
-            afk_pending_users[user_id]["count"] += 1
-            count = afk_pending_users[user_id]["count"]
-            
-            if count >= 5:
-                if not afk_pending_users[user_id].get("blocked", False):
+            # GROUP CHAT - LOGIKA SUPER BRUTAL PER GRUP!
+            if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
+                chat_id = message.chat.id
+                
+                # PRIORITAS 1: CEK SUPER BRUTAL (BALAS SEMUA PESAN!)
+                if chat_id in SUPERBRUTAL_GROUPS:
+                    await message.reply(get_brutal_reply())
+                    break
+                
+                # PRIORITAS 2: CEK WHITELIST (BALAS NORMAL)
+                if chat_id in WHITELIST_GROUPS:
+                    # CEK MENTION DULU
                     try:
-                        await client.block_user(user_id)
-                        afk_pending_users[user_id]["blocked"] = True
-                        await message.reply("💀 SPAM! You have been blocked by THE TAMERS!")
+                        me = await client.get_me()
+                        if me.username and message.text and f"@{me.username.lower()}" in message.text.lower():
+                            await message.reply(get_mention_reply())
+                            break
                     except:
                         pass
-                return
-            
-            if count >= 3 and not afk_pending_users[user_id].get("warned", False):
-                afk_pending_users[user_id]["warned"] = True
-                await message.reply("⚠️ WARNING! Don't spam, or THE TAMERS will block you!")
-                return
-            
-            await message.reply(AFK_REPLY)
-            return
-        
-        if chat_type == ChatType.PRIVATE:
-            if auto_reply_private:
-                await message.reply(get_simple_reply())
-            return
-        
-        if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
-            if message.chat.id not in WHITELIST_GROUPS or message.chat.id in BLOCKED_GROUPS:
-                return
-            
-            try:
-                me = await client.get_me()
-                if me.username and message.text and f"@{me.username.lower()}" in message.text.lower():
-                    await message.reply(get_mention_reply())
+                    
+                    await message.reply(get_simple_reply())
+                    break
+                
+                # PRIORITAS 3: CEK BLACKLIST (JANGAN BALAS)
+                if chat_id in BLOCKED_GROUPS:
                     return
-            except:
-                pass
-            
-            await message.reply(get_simple_reply())
-    
-    except FloodWait as e:
-        await asyncio.sleep(e.value)
-    except Exception as e:
-        pass
+                
+                # DEFAULT: JANGAN BALAS
+                return
+        
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+            continue
+        except Exception as e:
+            if attempt < max_retry - 1:
+                await asyncio.sleep(1)
+                continue
+            else:
+                break
 
 # =============================================
-# FLASK ROUTES (Biar ga kena idle)
+# FLASK ROUTES
 # =============================================
 @app_flask.route("/", methods=["GET"])
 def index():
-    return "💀 THE TAMERS USERBOT v2.0 - RUNNING ON RAILWAY 💀", 200
+    return "💀 THE TAMERS SUPER BRUTAL v3.1 - RUNNING ON RAILWAY 💀", 200
 
 @app_flask.route("/ping", methods=["GET"])
 def ping():
@@ -921,20 +1101,22 @@ def run_flask():
 # MAIN
 # =============================================
 async def main():
-    global client, BLOCKED_GROUPS, WHITELIST_GROUPS, settings, GBAN_USERS
+    global client, BLOCKED_GROUPS, WHITELIST_GROUPS, SUPERBRUTAL_GROUPS, settings, GBAN_USERS
     
     # Load data
     BLOCKED_GROUPS = load_blacklist()
     WHITELIST_GROUPS = load_whitelist()
+    SUPERBRUTAL_GROUPS = load_superbrutal_groups()
     settings = load_settings()
     GBAN_USERS = load_gban_list()
     
-    print("═" * 40)
-    print("💀 THE TAMERS v2.0 - RAILWAY EDITION 💀")
-    print("═" * 40)
+    print("=" * 55)
+    print("💀 THE TAMERS v3.1 - SELECTIVE SUPER BRUTAL EDITION 💀")
+    print("=" * 55)
     print(f"📋 GBAN: {len(GBAN_USERS)} victims")
     print(f"🚫 Blacklist: {len(BLOCKED_GROUPS)} groups")
     print(f"✅ Whitelist: {len(WHITELIST_GROUPS)} groups")
+    print(f"🔥 Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups")
     print("🔇 GBAN Mode: SILENT DEATH")
     print("🌐 Platform: RAILWAY")
     print("")
@@ -1028,12 +1210,25 @@ async def main():
         @client.on_message(filters.me & filters.command("listgban", prefixes="."))
         async def listgban_handler(c, m): await cmd_listgban(c, m)
         
+        # SUPER BRUTAL COMMANDS (PER GRUP!)
+        @client.on_message(filters.me & filters.command("superbrutal on", prefixes="."))
+        async def superbrutalon_handler(c, m): await cmd_superbrutal_on(c, m)
+        
+        @client.on_message(filters.me & filters.command("superbrutal off", prefixes="."))
+        async def superbrutaloff_handler(c, m): await cmd_superbrutal_off(c, m)
+        
+        @client.on_message(filters.me & filters.command("listsuperbrutal", prefixes="."))
+        async def listsuperbrutal_handler(c, m): await cmd_list_superbrutal(c, m)
+        
         # Auto reply handler
         @client.on_message(filters.incoming & ~filters.me)
         async def auto_reply_handler(c, m):
             await process_incoming_message(c, m)
         
         print("📌 ALL COMMANDS LOADED!")
+        print("🔥 SUPER BRUTAL MODE: PER GROUP BASIS!")
+        print("💀 Use .superbrutal on in any group to activate!")
+        print("")
         print(f"📌 Bot is RUNNING on Railway!")
         print(f"📌 Press Ctrl+C to stop...")
         print("")
@@ -1041,7 +1236,8 @@ async def main():
         # Keep running
         while True:
             await asyncio.sleep(60)
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Bot still alive tai...")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔥 THE TAMERS STILL KILLING SPAMMERS! 🔥")
+            print(f"   📋 Super Brutal active in {len(SUPERBRUTAL_GROUPS)} groups")
             
     except Exception as e:
         print(f"❌ Error: {e}")
