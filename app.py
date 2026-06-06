@@ -244,14 +244,16 @@ def save_gban_list(gban_set):
         json.dump({"gban_users": list(gban_set)}, f, indent=4)
 
 # =============================================
-# AUTO MUTE FUNCTIONS
+# AUTO MUTE FUNCTIONS (FIX VERSION)
 # =============================================
 
 async def is_admin(client, chat_id, user_id):
     """Cek apakah user adalah admin di grup"""
     try:
         member = await client.get_chat_member(chat_id, user_id)
-        return member.status in ["administrator", "creator"]
+        admin_statuses = ["administrator", "creator"]
+        status = str(member.status).lower() if member.status else ""
+        return status in admin_statuses
     except:
         return False
 
@@ -264,9 +266,11 @@ async def mute_user(client, chat_id, user_id, duration=60):
             can_send_other_messages=False,
             can_add_web_page_previews=False
         )
-        await client.restrict_chat_member(chat_id, user_id, permissions, datetime.now() + timedelta(seconds=duration))
+        until_date = datetime.now() + timedelta(seconds=duration)
+        await client.restrict_chat_member(chat_id, user_id, permissions, until_date)
         return True
     except Exception as e:
+        print(f"Mute error: {e}")
         return False
 
 async def unmute_user(client, chat_id, user_id):
@@ -284,15 +288,25 @@ async def unmute_user(client, chat_id, user_id):
         return False
 
 async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
-    """Cek dan mute spammer jika perlu"""
+    """Cek dan mute spammer jika perlu (FIX VERSION)"""
     global spam_counter, spam_warned, muted_users
     
     if chat_id not in AUTOMUTE_GROUPS:
         return False
     
-    # Cek apakah user adalah admin (GAK BISA MUTE ADMIN!)
+    # CEK APAKAH USER ADALAH ADMIN (GAK BISA MUTE ADMIN!)
     if await is_admin(client, chat_id, user_id):
         return False
+    
+    # CEK APAKAH USERBOT ADMIN
+    me = await client.get_me()
+    bot_is_admin = False
+    try:
+        bot_member = await client.get_chat_member(chat_id, me.id)
+        bot_status = str(bot_member.status).lower() if bot_member.status else ""
+        bot_is_admin = bot_status in ["administrator", "creator"]
+    except:
+        bot_is_admin = False
     
     # Inisialisasi counter
     if chat_id not in spam_counter:
@@ -309,29 +323,41 @@ async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
     # LEVEL 1: PERINGATAN (3-4 pesan)
     if count == 3 and not spam_warned[chat_id].get(user_id, False):
         spam_warned[chat_id][user_id] = True
-        await message.reply(f"💀 **PERINGATAN!** @{user_name if user_name else user_id} JANGAN SPAM! Kalo sampai 5x bakal kena MUTE 5 menit! 💀")
+        if bot_is_admin:
+            await message.reply(f"💀 **PERINGATAN!** @{user_name} JANGAN SPAM! Kalo sampai 5x bakal kena MUTE 5 menit! 💀")
+        else:
+            await message.reply(f"💀 **PERINGATAN!** @{user_name} JANGAN SPAM! (Userbot bukan admin, jadi gak bisa mute) 💀")
+        return False
+    
+    # KALO USERBOT BUKAN ADMIN, STOP DISINI (GAK BISA MUTE)
+    if not bot_is_admin:
+        # TAPI TETAP HITUNG BUAT PERINGATAN
+        if count >= 5:
+            await message.reply(f"⚠️ @{user_name} UDAH {count}x SPAM! TAPI USERBOT BUKAN ADMIN JADI GAK BISA MUTE! 💀")
         return False
     
     # LEVEL 2: MUTE 5 MENIT (5-9 pesan)
     if count == 5 and user_id not in muted_users[chat_id]:
         muted_users[chat_id].add(user_id)
-        await mute_user(client, chat_id, user_id, 300)  # 5 menit
-        await message.reply(f"🔇 **AUTO MUTE!** @{user_name if user_name else user_id} KENA MUTE 5 MENIT KARENA SPAM! 💀")
-        
-        # Reset counter setelah mute
+        if await mute_user(client, chat_id, user_id, 300):
+            await message.reply(f"🔇 **AUTO MUTE!** @{user_name} KENA MUTE 5 MENIT KARENA SPAM! 💀")
+        else:
+            await message.reply(f"⚠️ GAGAL MUTE! Pastikan userbot punya hak 'Restrict Members'! 💀")
         spam_counter[chat_id][user_id] = 0
         return True
     
     # LEVEL 3: MUTE 30 MENIT (10-14 pesan)
     if count == 10 and user_id in muted_users[chat_id]:
-        await mute_user(client, chat_id, user_id, 1800)  # 30 menit
-        await message.reply(f"🔇 **MUTE DIPERPANJANG!** @{user_name if user_name else user_id} KENA MUTE 30 MENIT! BERHENTI SPAM! 💀")
+        if await mute_user(client, chat_id, user_id, 1800):
+            await message.reply(f"🔇 **MUTE DIPERPANJANG!** @{user_name} KENA MUTE 30 MENIT! 💀")
+        spam_counter[chat_id][user_id] = 0
         return True
     
     # LEVEL 4: MUTE 1 JAM (15+ pesan)
     if count >= 15:
-        await mute_user(client, chat_id, user_id, 3600)  # 1 jam
-        await message.reply(f"🔇 **MUTE TOTAL!** @{user_name if user_name else user_id} KENA MUTE 1 JAM! GOBLOK BANGET SI LO! 💀")
+        if await mute_user(client, chat_id, user_id, 3600):
+            await message.reply(f"🔇 **MUTE TOTAL!** @{user_name} KENA MUTE 1 JAM! GOBLOK BANGET! 💀")
+        spam_counter[chat_id][user_id] = 0
         return True
     
     return False
