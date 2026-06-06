@@ -1,6 +1,6 @@
 """
-THE TAMERS USERBOT v7.0 - GBAN NUCLEAR + AUTO MUTE EDITION
-GBAN SUPER BRUTAL + Auto Mute NSFW/Promo/Spam!
+THE TAMERS USERBOT v7.0 - SUPER SENSITIVE AUTO MUTE EDITION
+Deteksi semua jenis spam, promosi, NSFW, dan konten dewasa!
 """
 
 import sys
@@ -15,7 +15,7 @@ import threading
 import time
 import ctypes
 from datetime import datetime, timedelta
-from typing import Set, Dict, List
+from typing import Set, Dict, List, Tuple
 from flask import Flask, request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -86,17 +86,42 @@ spam_warned: Dict[int, Dict[int, bool]] = {}
 muted_users: Dict[int, Set[int]] = {}
 
 # =============================================
-# DAFTAR KATA SPAM & NSFW
+# DAFTAR KATA SPAM & NSFW (SUPER LENGKAP!)
 # =============================================
 
-# Kata promosi & spam
+# Kata promosi chat / ajakan chat
 SPAM_KEYWORDS = [
+    # Ajakan chat
+    r'yuuu\s+chatt?', r'chatt?\s+yuuu', r'ajak\s+chat', r'chat\s+yuk',
+    r'yuk\s+chat', r'mau\s+chat', r'chat\s+dong', r'pm\s+chat',
+    r'pc\s+chat', r'chat\s+me', r'message\s+me', r'dm\s+me',
+    r'open\s+dm', r'dm\s+open', r'hyprr', r'hyper', r'hype',
+    r'vicee', r'vices', r'vice', r'angee', r'anges', r'ange',
+    r'1cwooo', r'cwoo', r'cowoo', r'cowo', r'cewe', r'cewee',
+    r'1cooo', r'cooo', r'coy', r'cuy',
+    r'limittt', r'limit', r'unlimit', r'unlimited', r'limitny',
+    r'deposit', r'minat', r'berminat', r'pemesanan', r'pesan',
+    r'order', r'pesanan', r'booking', r'reservasi',
+    r'open\s+order', r'open\s+ch', r'open\s+chat', r'open\s+dm',
+    r'call\s+me', r'vc\s+me', r'voice\s+call',
+    
+    # Promosi grup / channel
     r'promosi\s*grup', r'join\s*grup', r'gabung\s*grup', r'iklan\s*grup',
     r'sc:promosi', r'promosi\s+', r'iklan\s+', r'group\s+promosi',
     r'vvip', r'vip', r'murmer', r'murah', r'diskon', r'promo',
     r'jual', r'beli', r'toko', r'shop', r'dagang', r'bisnis',
     r'affiliate', r'referral', r'undangan', r'vc\s+cht', r'vc\s*chat',
-    r'voice\s+chat', r'call\s+me', r'telepon', r'pm\s+me',
+    r'voice\s+chat', r'telepon', r'pm\s+me',
+    
+    # Kata ajakan lain
+    r'chatt?', r'ngobrol', r'obrol', r'ngomong', r'bicara',
+    r'temenin', r'temenan', r'kenalan', r'kenal', r'kenalan\s+yuk',
+    r'nambah\s+teman', r'tambah\s+teman', r'cari\s+teman',
+    r'teman\s+baru', r'sobat', r'sahabat',
+    
+    # Kata sampah
+    r'spam', r'botak', r'sc:', r'@all', r'@everyone',
+    r'tag\s+all', r'mention\s+all', r'everyone',
 ]
 
 # Kata pornografi & dewasa (NSFW)
@@ -109,11 +134,13 @@ NSFW_KEYWORDS = [
     r'mandi\s+bersama', r'jaket', r'kamar\s+mandi', r'keramas',
     r'pap', r'p\s*a\s*p', r'send\s+pap', r'pap\s+an', r'papan',
     r'nudes', r'nude', r'telanjang', r'buka\s+baju', r'buka\s+pakaian',
-    r'open\s+baju', r'hot', r'panas', r'bokep\s+indo', r'video\s+bokep', r'foto\s+bugil', r'foto\s+telanjang', r'foto\s+panas', r'foto\s+hot', r'foto\s+seksi', r'foto\s+ngentot', r'foto\s+ngewe', r'foto\s+memek',
-    r'chattan yuk', r'chat\s*yu?k', r'vc\s*yu?k', r'call\s*yu?k', r'mandi\s*yu?k', r'os\s*yu?k', r'temenin\s*yu?k', r'pap\s*yu?k', r'ridi VIP bokep telennt vcs semuanya ridi',
-    r'Redyyy\s*VIP\s*bokep\s*telennt\s*vc\s*semuanya\s*Ridi', r'Ridi\s*VIP\s*bokep\s*telennt\s*vc\s*semuanya\s*Redyyy', r'emutt', r'colmek', r'col*mek', r'col\*mek', r'col\+mek', r'col\s*mek',
-    r'promo', r'Temenin', r'VC', r'Voice\s*Chat', r'Call\s*Me', r'Telepon', r'PM\s*Me',
-    r'b.ocils', r'hyprr', r'hypr', r'hyper', r'dm', r'temenin', r'co', r'chat', r'vc', r'os', r'mandi',
+    r'open\s+baju', r'hot', r'panas',
+    
+    # Tambahan kata vulgar
+    r'18\+', r'18\s?\+', r'dewasa', r'dewasa\s+18', r'dewasa\s+18\+',
+    r'hot\s+chat', r'hot\s+call', r'video\s+call\s+18', r'vc\s+18',
+    r'call\s+18', r'telepon\s+18', r'ngewe\s+chat', r'sex\s+chat',
+    r's\*x', r'f\*ck', r'b\*jing',
 ]
 
 # Kata iklan & promo
@@ -121,28 +148,91 @@ PROMO_KEYWORDS = [
     r'beli\s+followers', r'beli\s+like', r'beli\s+view', r'jasa\s+social',
     r'boost\s+post', r'like\s+instagram', r'youtube\s+promosi',
     r'tiktok\s+promosi', r'shopee', r'tokopedia', r'lazada',
-    r'whatsapp\s+promosi', r'telegram\s+channel',
+    r'whatsapp\s+promosi', r'telegram\s+channel', r'beli\s+stream',
+    r'beli\s+subscribe', r'jasa\s+like', r'jasa\s+follow',
 ]
 
-def contains_forbidden_keywords(text: str) -> tuple:
-    """Cek apakah teks mengandung kata terlarang. Return (is_forbidden, type)"""
+# =============================================
+# FUNGSI NORMALISASI TEKS & DETEKSI
+# =============================================
+
+def normalize_text(text: str) -> str:
+    """Normalisasi teks untuk deteksi yang lebih baik"""
+    if not text:
+        return ""
+    # Ubah ke lowercase
+    text = text.lower()
+    # Hapus karakter berulang (yuuuu -> yuu)
+    text = re.sub(r'(.)\1{2,}', r'\1\1', text)
+    # Hapus spasi berlebih
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+def contains_forbidden_keywords(text: str) -> Tuple[bool, str]:
+    """Cek apakah teks mengandung kata terlarang - VERSI SUPER SENSITIVE"""
     if not text:
         return False, None
     
+    # Normalisasi teks dulu
+    normalized = normalize_text(text)
+    
     # Cek NSFW dulu (prioritas)
     for pattern in NSFW_KEYWORDS:
+        if re.search(pattern, normalized, re.IGNORECASE):
+            return True, "nsfw"
         if re.search(pattern, text, re.IGNORECASE):
             return True, "nsfw"
     
     # Cek Promosi
     for pattern in PROMO_KEYWORDS:
+        if re.search(pattern, normalized, re.IGNORECASE):
+            return True, "promo"
         if re.search(pattern, text, re.IGNORECASE):
             return True, "promo"
     
     # Cek Spam biasa
     for pattern in SPAM_KEYWORDS:
+        if re.search(pattern, normalized, re.IGNORECASE):
+            return True, "spam"
         if re.search(pattern, text, re.IGNORECASE):
             return True, "spam"
+    
+    # DETEKSI KHUSUS UNTUK POLA SEPERTI DI GAMBAR!
+    # Deteksi "yuuu chatt", "yuuu chat", "yuuu"
+    if re.search(r'y+u+\s*c+h+a+t+', normalized):
+        return True, "spam"
+    
+    # Deteksi "1cwooo", "cwoo", "cowoo", "1cooo"
+    if re.search(r'\d?c+w+o+', normalized):
+        return True, "spam"
+    
+    # Deteksi "viceess", "vices", "vice"
+    if re.search(r'v+i+c+e+s*', normalized):
+        return True, "spam"
+    
+    # Deteksi "angee", "anges", "ange"
+    if re.search(r'a+n+g+e+s*', normalized):
+        return True, "spam"
+    
+    # Deteksi "limittt", "limit", "unlimit"
+    if re.search(r'l+i+m+i+t+', normalized):
+        return True, "spam"
+    
+    # Deteksi "hyprr", "hyper", "hype"
+    if re.search(r'h+y+p+(r+|e+)', normalized):
+        return True, "spam"
+    
+    # Deteksi "dm", "pm", "pc" (kata pendek)
+    if re.search(r'\b(dm|pm|pc)\b', normalized):
+        return True, "spam"
+    
+    # Deteksi kombinasi angka + kata (1cwooo, 1cooo)
+    if re.search(r'\d+[a-z]{2,}', normalized) and len(normalized) < 25:
+        return True, "spam"
+    
+    # Deteksi kata berulang yang mencurigakan
+    if re.search(r'([a-z]{2,})\1{2,}', normalized) and len(normalized) < 30:
+        return True, "spam"
     
     return False, None
 
@@ -170,6 +260,7 @@ BRUTAL_REPLIES = [
     "💀 **YOUR MESSAGE IS TRASH!** 💀",
     "💀 **WASTE YOUR TIME ELSEWHERE!** 💀",
     "💀 **THE TAMERS HAVE SPOKEN!** 💀",
+    "💀 **STOP SPAMMING OR GET MUTED!** 💀",
 ]
 
 NSFW_REPLIES = [
@@ -307,7 +398,7 @@ def save_gban_list(gban_set):
         json.dump({"gban_users": list(gban_set)}, f, indent=4)
 
 # =============================================
-# AUTO MUTE FUNCTIONS (NSFW/PROMO/SPAM)
+# AUTO MUTE FUNCTIONS (SUPER SENSITIVE!)
 # =============================================
 
 async def is_admin_group(client, chat_id, user_id):
@@ -354,12 +445,12 @@ async def mute_user_group(client, chat_id, user_id, duration=300):
         return False
 
 async def check_and_auto_mute(client, chat_id, user_id, user_name, message):
-    """Cek pesan dan mute otomatis jika mengandung konten terlarang"""
+    """Cek pesan dan mute otomatis - VERSI SUPER SENSITIVE!"""
     
     if chat_id not in AUTOMUTE_GROUPS:
         return False
     
-    # Cek apakah user adalah admin (GAK BISA MUTE ADMIN!)
+    # Cek apakah user adalah admin
     if await is_admin_group(client, chat_id, user_id):
         return False
     
@@ -371,24 +462,31 @@ async def check_and_auto_mute(client, chat_id, user_id, user_name, message):
     # Ambil teks pesan
     text = message.text or message.caption or ""
     
-    # CEK KATA TERLARANG
+    # CEK KATA TERLARANG (PAKAI VERSI SUPER SENSITIVE)
     is_forbidden, content_type = contains_forbidden_keywords(text)
     
+    # DEBUG PRINT (bisa dihapus kalo udah fix)
     if is_forbidden:
-        # Tentukan durasi mute berdasarkan jenis konten
+        print(f"🔍 [DETECTED] {user_name}: '{text[:50]}' -> {content_type}")
+    
+    if is_forbidden:
+        # Tentukan durasi mute
         if content_type == "nsfw":
-            duration = 3600  # 1 jam untuk NSFW
+            duration = 3600  # 1 jam
             reply = get_nsfw_reply()
         elif content_type == "promo":
-            duration = 1800  # 30 menit untuk promo
+            duration = 1800  # 30 menit
             reply = get_promo_reply()
         else:
-            duration = 600  # 10 menit untuk spam biasa
+            duration = 600  # 10 menit
             reply = get_brutal_reply()
         
         # Mute user
         if await mute_user_group(client, chat_id, user_id, duration):
-            await message.reply(f"{reply}\n\n🔇 **MUTED FOR {duration//60} MINUTES!**")
+            try:
+                await message.reply(f"{reply}\n\n🔇 **MUTED FOR {duration//60} MINUTES!**")
+            except:
+                pass
             return True
     
     return False
@@ -634,7 +732,7 @@ async def cmd_list_superbrutal(client, message):
     await message.reply(f"{title_bar('SUPER BRUTAL LIST', '📋')}\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines) + f"\n{BRAND} 💀")
 
 # =============================================
-# COMMAND: AUTO MUTE (NSFW/PROMO/SPAM)
+# COMMAND: AUTO MUTE (SUPER SENSITIVE)
 # =============================================
 async def cmd_automute_on(client, message):
     """Aktifin auto mute (NSFW/Promo/Spam) di grup ini"""
@@ -652,7 +750,6 @@ async def cmd_automute_on(client, message):
         await message.reply(f"⚠️ Auto Mute already ON in {chat_title}")
         return
     
-    # CEK APAKAH USERBOT ADMIN DAN PUNYA HAK RESTRICT
     bot_can_mute = await can_restrict_members(client, chat_id)
     
     if not bot_can_mute:
@@ -681,9 +778,14 @@ async def cmd_automute_on(client, message):
 
 💀 **AUTO MUTE ACTIVATED!**
 
-🔞 **NSFW CONTENT** (pornografi, dewasa) → MUTE 1 JAM
-📢 **PROMOTION/ADS** (iklan, promo, vvip/vip) → MUTE 30 MENIT
-💀 **SPAM** (spam biasa) → MUTE 10 MENIT
+🔞 **NSFW CONTENT** → MUTE 1 JAM
+📢 **PROMOTION/ADS** → MUTE 30 MENIT
+💀 **SPAM** → MUTE 10 MENIT
+
+📌 **DETEKSI KHUSUS:**
+   • yuuu chatt, 1cwooo, viceess
+   • hyprr, dm, pm, limit
+   • Dan semua variasi spam lainnya!
 
 {BRAND} 💀
 """)
@@ -723,6 +825,38 @@ async def cmd_list_automute(client, message):
             lines.append(f"▸ ID: {gid}")
     
     await message.reply(f"{title_bar('AUTO MUTE LIST', '📋')}\nTotal: {len(AUTOMUTE_GROUPS)}\n" + "\n".join(lines) + f"\n{BRAND} 💀")
+
+# =============================================
+# COMMAND: TEST DETEKSI
+# =============================================
+async def cmd_test_detect(client, message):
+    """Test deteksi kata spam/nsfw/promo"""
+    if not message.reply_to_message:
+        await message.reply("❌ Reply ke pesan yang mau di test!")
+        return
+    
+    text = message.reply_to_message.text or message.reply_to_message.caption or ""
+    is_forbidden, content_type = contains_forbidden_keywords(text)
+    
+    if is_forbidden:
+        await message.reply(f"""
+🔍 **TEST RESULT:**
+━━━━━━━━━━━━━━━━━━━━━━━━
+📝 Text: `{text[:100]}`
+🚫 Status: **TERDETEKSI!**
+📌 Type: **{content_type.upper()}**
+💀 Action: **WILL BE MUTED!**
+━━━━━━━━━━━━━━━━━━━━━━━━
+""")
+    else:
+        await message.reply(f"""
+🔍 **TEST RESULT:**
+━━━━━━━━━━━━━━━━━━━━━━━━
+📝 Text: `{text[:100]}`
+✅ Status: **TIDAK TERDETEKSI**
+⚠️ Jika ini spam, tambahkan keyword ke dalam daftar!
+━━━━━━━━━━━━━━━━━━━━━━━━
+""")
 
 # =============================================
 # COMMAND: GBAN NUCLEAR
@@ -1303,7 +1437,7 @@ async def ultra_brutal_handler(client, message):
 # =============================================
 @app_flask.route("/", methods=["GET"])
 def index():
-    return "💀 THE TAMERS NUCLEAR v7.0 - RUNNING  💀", 200
+    return "💀 THE TAMERS NUCLEAR v7.0 - RUNNING ON RAILWAY 💀", 200
 
 @app_flask.route("/ping", methods=["GET"])
 def ping():
@@ -1327,7 +1461,7 @@ async def main():
     GBAN_USERS = load_gban_list()
     
     print("=" * 60)
-    print("💀 THE TAMERS v7.0 - GBAN NUCLEAR + AUTO MUTE 💀")
+    print("💀 THE TAMERS v7.0 - SUPER SENSITIVE AUTO MUTE 💀")
     print("=" * 60)
     print(f"📋 GBAN Nuclear: {len(GBAN_USERS)} victims")
     print(f"🚫 Blacklist: {len(BLOCKED_GROUPS)} groups")
@@ -1335,8 +1469,10 @@ async def main():
     print(f"🔥 Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups")
     print(f"🔇 Auto Mute: {len(AUTOMUTE_GROUPS)} groups")
     print("💀 GBAN Mode: NUCLEAR (SILENT & BRUTAL)")
-    print("🔞 NSFW Detector: ACTIVE")
-    print("📢 Promo Detector: ACTIVE")
+    print("🔞 NSFW Detector: SUPER SENSITIVE")
+    print("📢 Promo Detector: SUPER SENSITIVE")
+    print("💀 Spam Detector: SUPER SENSITIVE")
+    print("🌐 Platform: RAILWAY")
     print("")
     
     session_string = os.getenv("SESSION_STRING")
@@ -1442,14 +1578,17 @@ async def main():
         @client.on_message(filters.me & filters.command("listautomute", prefixes="."))
         async def _(c, m): await cmd_list_automute(c, m)
         
+        @client.on_message(filters.me & filters.command("testdetect", prefixes="."))
+        async def _(c, m): await cmd_test_detect(c, m)
+        
         @client.on_message(filters.incoming & ~filters.me)
         async def auto_reply(c, m):
             await ultra_brutal_handler(c, m)
         
         print("📌 ALL COMMANDS LOADED!")
         print("💀 GBAN NUCLEAR MODE: ACTIVE!")
-        print("🔇 AUTO MUTE NSFW/PROMO/SPAM: ACTIVE!")
-        print("🔇 SILENT MODE: ON (target tidak tahu)")
+        print("🔇 AUTO MUTE (SUPER SENSITIVE): ACTIVE!")
+        print("🔞 NSFW/PROMO/SPAM DETECTOR: ACTIVE!")
         print("")
         print(f"📌 Bot is RUNNING on Railway!")
         print(f"📌 Press Ctrl+C to stop...")
