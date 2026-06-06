@@ -113,6 +113,7 @@ NSFW_KEYWORDS = [
     r'chattan yuk', r'chat\s*yu?k', r'vc\s*yu?k', r'call\s*yu?k', r'mandi\s*yu?k', r'os\s*yu?k', r'temenin\s*yu?k', r'pap\s*yu?k', r'ridi VIP bokep telennt vcs semuanya ridi',
     r'Redyyy\s*VIP\s*bokep\s*telennt\s*vc\s*semuanya\s*Ridi', r'Ridi\s*VIP\s*bokep\s*telennt\s*vc\s*semuanya\s*Redyyy', r'emutt', r'colmek', r'col*mek', r'col\*mek', r'col\+mek', r'col\s*mek',
     r'promo', r'Temenin', r'VC', r'Voice\s*Chat', r'Call\s*Me', r'Telepon', r'PM\s*Me',
+    r'b.ocils', r'hyprr', r'hypr', r'hyper', r'dm', r'temenin', r'co', r'chat', r'vc', r'os', r'mandi', r''open' r'horn' r'co ',
 ]
 
 # Kata iklan & promo
