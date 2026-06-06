@@ -1,6 +1,6 @@
 """
-THE TAMERS USERBOT v5.0 - AUTO MUTE FIX EDITION
-FIXED: Auto mute sekarang WORK meskipun userbot admin!
+THE TAMERS USERBOT v6.0 - SPAM & NSFW DETECTOR
+Deteksi spam, promosi, vvip/vip, pap, dan konten pornografi langsung MUTE!
 """
 
 import sys
@@ -15,7 +15,7 @@ import threading
 import time
 import ctypes
 from datetime import datetime, timedelta
-from typing import Set, Dict
+from typing import Set, Dict, List
 from flask import Flask, request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -61,7 +61,7 @@ SUPERBRUTAL_FILE = "superbrutal_groups.json"
 AUTOMUTE_FILE = "automute_groups.json"
 BOT_START_TIME = time.time()
 BRAND = "THE TAMERS"
-VERSION = "5.0.0"
+VERSION = "6.0.0"
 
 # =============================================
 # DATA GLOBAL
@@ -82,6 +82,76 @@ spam_warned: Dict[int, Dict[int, bool]] = {}
 muted_users: Dict[int, Set[int]] = {}
 
 # =============================================
+# DAFTAR KATA SPAM & NSFW (LENGKAP!)
+# =============================================
+
+# Kata promosi & spam
+SPAM_KEYWORDS = [
+    # Promosi grup
+    r'promosi\s*grup', r'join\s*grup', r'gabung\s*grup', r'iklan\s*grup',
+    r'sc:promosi', r'promosi\s+', r'iklan\s+', r'group\s+promosi',
+    
+    # VVIP / VIP
+    r'vvip', r'vip', r'murmer', r'murah', r'diskon', r'promo',
+    r'jual', r'beli', r'toko', r'shop', r'dagang', r'bisnis',
+    r'affiliate', r'referral', r'undangan',
+    
+    # Promosi chat
+    r'vc\s+cht', r'vc\s*chat', r'voice\s+chat', r'call\s+me',
+    r'telepon', r'telp\s+gua', r'chat\s+me', r'pm\s+me',
+    
+    # Kata2 sampah
+    r'spam', r'botak', r'sc:',
+]
+
+# Kata pornografi & dewasa
+NSFW_KEYWORDS = [
+    # Pornografi
+    r'ngewe', r'ngentot', r'sex', r'seks', r'porn', r'porno',
+    r'bokep', r'bokeb', r'blue', r'film\s+dewasa', r'video\s+dewasa',
+    r'ml', r'melayani', r'ngocok', r'coli', r'toket', r'tete',
+    r'memek', r'kontol', r'pepek', r'peler', r'pantat',
+    
+    # Mandi / OS
+    r'temenin\s+mandi', r'temenin\s+os', r'os\s+os', r'mandi\s+bareng',
+    r'mandi\s+bersama', r'jaket', r'os\s+os\s+os', r'os\s+os',
+    r'kamar\s+mandi', r'keramas',
+    
+    # Pap / konten
+    r'pap', r'p\s*a\s*p', r'send\s+pap', r'pap\s+an', r'papan',
+    r'nudes', r'nude', r'telanjang', r'buka\s+baju', r'buka\s+pakaian',
+    r'open\s+baju', r'hot', r'panas',
+    
+    # Kata vulgar
+    r'memek', r'kontol', r'anjing', r'ntt', r'ntt\s+',
+    r'goblok\s+goblok', r'asu', r'bangsat', r'sialan',
+]
+
+# Kata iklan & promo
+PROMO_KEYWORDS = [
+    r'beli\s+followers', r'beli\s+like', r'beli\s+view', r'jasa\s+social',
+    r'boost\s+post', r'like\s+instagram', r'youtube\s+promosi',
+    r'tiktok\s+promosi', r'shopee', r'tokopedia', r'lazada',
+    r'whatsapp\s+promosi', r'telegram\s+channel',
+]
+
+# Gabungkan semua kata terlarang
+ALL_BANNED_KEYWORDS = SPAM_KEYWORDS + NSFW_KEYWORDS + PROMO_KEYWORDS
+
+# Compile regex (case insensitive)
+SPAM_PATTERNS = [re.compile(pattern, re.IGNORECASE) for pattern in ALL_BANNED_KEYWORDS]
+
+def contains_forbidden_keywords(text: str) -> tuple:
+    """Cek apakah teks mengandung kata terlarang. Return (is_forbidden, keyword_found)"""
+    if not text:
+        return False, None
+    
+    for pattern in SPAM_PATTERNS:
+        if pattern.search(text):
+            return True, pattern.pattern
+    return False, None
+
+# =============================================
 # BRUTAL SPAM REPLIES
 # =============================================
 BRUTAL_REPLIES = [
@@ -95,27 +165,34 @@ BRUTAL_REPLIES = [
     "💀 **YOUR ACCOUNT IS MARKED! GOODBYE!** 💀",
     "💀 **SPAMMERS ARE NOT WELCOME HERE!** 💀",
     "💀 **THE TAMERS WILL HAUNT YOUR ACCOUNT!** 💀",
-    "💀 **GO F*CK YOURSELF, SPAMMER!** 💀",
-    "💀 **YOUR IP HAS BEEN LOGGED!** 💀",
-    "💀 **SAY GOODBYE TO YOUR TELEGRAM ACCOUNT!** 💀",
-    "💀 **THE TAMERS ARE WATCHING YOU!** 💀",
-    "💀 **SPAM = AUTOMATIC MUTE!** 💀",
-    "💀 **YOU'VE BEEN MARKED BY THE TAMERS!** 💀",
-    "💀 **YOUR MESSAGE IS WORTHLESS!** 💀",
-    "💀 **GET REKT SPAMMER!** 💀",
-    "💀 **THE TAMERS NEVER SLEEP!** 💀",
-    "💀 **SPAM = BANNED FOREVER!** 💀",
 ]
 
-SIMPLE_REPLIES = [
-    "hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀",
-    "hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀",
+NSFW_REPLIES = [
+    "💀 **KONTEN DEWASA TERDETEKSI! ANDA KENA MUTE!** 💀",
+    "🔞 **NSFW DETECTED! AUTOMATIC MUTE APPLIED!** 🔞",
+    "💀 **KONTEN PORNO DILARANG! ANDA KENA MUTE 1 JAM!** 💀",
+    "🔞 **YOUR MESSAGE CONTAINS INAPPROPRIATE CONTENT!** 🔞",
+    "💀 **HARAM! ANDA DI-MUTE OTOMATIS!** 💀",
 ]
+
+PROMO_REPLIES = [
+    "💀 **PROMOSI DILARANG! ANDA KENA MUTE!** 💀",
+    "💀 **NO PROMOTION ALLOWED! AUTOMATIC MUTE!** 💀",
+    "💀 **IKLAN/PROMOSI TIDAK DIPERBOLEHKAN!** 💀",
+]
+
+SIMPLE_REPLIES = ["hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀"]
 MENTION_REPLIES = ["hmm? 💀", "ya? 💀", "iyeee? 💀", "ada apa? 💀", "💀?", "💀?"]
 AFK_REPLY = "💀 **THE TAMERS** sedang AFK, sabar takut nanti kena kutukan! 💀"
 
 def get_brutal_reply():
     return random.choice(BRUTAL_REPLIES)
+
+def get_nsfw_reply():
+    return random.choice(NSFW_REPLIES)
+
+def get_promo_reply():
+    return random.choice(PROMO_REPLIES)
 
 def get_simple_reply():
     return random.choice(SIMPLE_REPLIES)
@@ -241,7 +318,7 @@ def save_gban_list(gban_set):
         json.dump({"gban_users": list(gban_set)}, f, indent=4)
 
 # =============================================
-# AUTO MUTE FUNCTIONS (FIXED 100%!)
+# AUTO MUTE FUNCTIONS
 # =============================================
 
 async def is_admin(client, chat_id, user_id):
@@ -251,8 +328,7 @@ async def is_admin(client, chat_id, user_id):
         if member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
             return True
         return False
-    except Exception as e:
-        print(f"Debug is_admin error: {e}")
+    except:
         return False
 
 async def is_bot_admin(client, chat_id):
@@ -263,8 +339,7 @@ async def is_bot_admin(client, chat_id):
         if member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
             return True
         return False
-    except Exception as e:
-        print(f"Debug is_bot_admin error: {e}")
+    except:
         return False
 
 async def can_restrict_members(client, chat_id):
@@ -278,21 +353,23 @@ async def can_restrict_members(client, chat_id):
         elif member.status == ChatMemberStatus.OWNER:
             return True
         return False
-    except Exception as e:
-        print(f"Debug can_restrict error: {e}")
+    except:
         return False
 
-async def mute_user(client, chat_id, user_id, duration=60):
+async def mute_user(client, chat_id, user_id, duration=300):
     """Mute user dengan durasi tertentu (detik)"""
     try:
-        permissions = ChatPermissions(
-            can_send_messages=False,
-            can_send_media_messages=False,
-            can_send_other_messages=False,
-            can_add_web_page_previews=False
+        await client.restrict_chat_member(
+            chat_id, 
+            user_id, 
+            ChatPermissions(
+                can_send_messages=False,
+                can_send_media_messages=False,
+                can_send_other_messages=False,
+                can_add_web_page_previews=False
+            ),
+            datetime.now() + timedelta(seconds=duration)
         )
-        until_date = datetime.now() + timedelta(seconds=duration)
-        await client.restrict_chat_member(chat_id, user_id, permissions, until_date)
         return True
     except Exception as e:
         print(f"Mute error: {e}")
@@ -313,7 +390,7 @@ async def unmute_user(client, chat_id, user_id):
         return False
 
 async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
-    """Cek dan mute spammer jika perlu"""
+    """Cek dan mute spammer berdasarkan keyword"""
     global spam_counter, spam_warned, muted_users
     
     if chat_id not in AUTOMUTE_GROUPS:
@@ -323,9 +400,41 @@ async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
     if await is_admin(client, chat_id, user_id):
         return False
     
-    # CEK APAKAH USERBOT ADMIN DAN PUNYA HAK RESTRICT
+    # CEK APAKAH USERBOT BISA MUTE
     bot_can_mute = await can_restrict_members(client, chat_id)
     
+    if not bot_can_mute:
+        return False
+    
+    # Ambil teks pesan
+    text = message.text or message.caption or ""
+    
+    # CEK KATA TERLARANG
+    is_forbidden, keyword = contains_forbidden_keywords(text)
+    
+    if is_forbidden:
+        # Langsung mute tanpa peringatan untuk konten berbahaya
+        # Cek jenis konten untuk durasi yang berbeda
+        is_nsfw = any(re.search(p, text, re.IGNORECASE) for p in NSFW_KEYWORDS)
+        is_promo = any(re.search(p, text, re.IGNORECASE) for p in PROMO_KEYWORDS)
+        
+        if is_nsfw:
+            duration = 3600  # 1 jam untuk NSFW
+            reply = get_nsfw_reply()
+        elif is_promo:
+            duration = 1800  # 30 menit untuk promo
+            reply = get_promo_reply()
+        else:
+            duration = 600  # 10 menit untuk spam biasa
+            reply = get_brutal_reply()
+        
+        # Mute user
+        if await mute_user(client, chat_id, user_id, duration):
+            await message.reply(f"{reply}\n\n🔇 **MUTED FOR {duration//60} MINUTES!**\n📌 Keyword: `{keyword}`")
+            print(f"🔇 [AUTO-MUTE] {user_name} muted for {duration}s - Keyword: {keyword}")
+            return True
+    
+    # Jika bukan kata terlarang, lanjut ke counter spam biasa
     # Inisialisasi counter
     if chat_id not in spam_counter:
         spam_counter[chat_id] = {}
@@ -338,42 +447,31 @@ async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
     spam_counter[chat_id][user_id] = spam_counter[chat_id].get(user_id, 0) + 1
     count = spam_counter[chat_id][user_id]
     
-    # LEVEL 1: PERINGATAN (3-4 pesan)
+    # LEVEL 1: PERINGATAN (3 pesan)
     if count == 3 and not spam_warned[chat_id].get(user_id, False):
         spam_warned[chat_id][user_id] = True
-        if bot_can_mute:
-            await message.reply(f"💀 **PERINGATAN!** @{user_name} JANGAN SPAM! Kalo sampai 5x bakal kena MUTE 5 menit! 💀")
-        else:
-            await message.reply(f"💀 **PERINGATAN!** @{user_name} JANGAN SPAM! (Userbot bukan admin/punya hak restrict, jadi gak bisa mute) 💀")
+        await message.reply(f"💀 **PERINGATAN!** {user_name} JANGAN SPAM! Kalo sampai 5x bakal kena MUTE 5 menit! 💀")
         return False
     
-    # KALO USERBOT GAK BISA MUTE, STOP DISINI
-    if not bot_can_mute:
-        if count >= 5 and count % 5 == 0:
-            await message.reply(f"⚠️ @{user_name} UDAH {count}x SPAM! TAPI USERBOT BUKAN ADMIN ATAU GAK PUNYA HAK RESTRICT MEMBERS! 💀")
-        return False
-    
-    # LEVEL 2: MUTE 5 MENIT (5-9 pesan)
+    # LEVEL 2: MUTE 5 MENIT (5 pesan)
     if count == 5 and user_id not in muted_users[chat_id]:
         muted_users[chat_id].add(user_id)
         if await mute_user(client, chat_id, user_id, 300):
-            await message.reply(f"🔇 **AUTO MUTE!** @{user_name} KENA MUTE 5 MENIT KARENA SPAM! 💀")
-        else:
-            await message.reply(f"⚠️ GAGAL MUTE! Pastikan userbot punya hak 'Restrict Members'! 💀")
+            await message.reply(f"🔇 **AUTO MUTE!** {user_name} KENA MUTE 5 MENIT KARENA SPAM! 💀")
         spam_counter[chat_id][user_id] = 0
         return True
     
-    # LEVEL 3: MUTE 30 MENIT (10-14 pesan)
+    # LEVEL 3: MUTE 30 MENIT (10 pesan)
     if count == 10 and user_id in muted_users[chat_id]:
         if await mute_user(client, chat_id, user_id, 1800):
-            await message.reply(f"🔇 **MUTE DIPERPANJANG!** @{user_name} KENA MUTE 30 MENIT! 💀")
+            await message.reply(f"🔇 **MUTE DIPERPANJANG!** {user_name} KENA MUTE 30 MENIT! 💀")
         spam_counter[chat_id][user_id] = 0
         return True
     
     # LEVEL 4: MUTE 1 JAM (15+ pesan)
     if count >= 15:
         if await mute_user(client, chat_id, user_id, 3600):
-            await message.reply(f"🔇 **MUTE TOTAL!** @{user_name} KENA MUTE 1 JAM! GOBLOK BANGET! 💀")
+            await message.reply(f"🔇 **MUTE TOTAL!** {user_name} KENA MUTE 1 JAM! GOBLOK BANGET! 💀")
         spam_counter[chat_id][user_id] = 0
         return True
     
@@ -422,6 +520,8 @@ async def cmd_status(client, message):
 {info_line("Uptime", get_uptime(), "⏱️")}
 {info_line("Super Brutal", f"{len(SUPERBRUTAL_GROUPS)} groups", "🔥")}
 {info_line("Auto Mute", f"{len(AUTOMUTE_GROUPS)} groups", "🔇")}
+{info_line("SPAM Detector", "ACTIVE", "🛡️")}
+{info_line("NSFW Detector", "ACTIVE", "🔞")}
 {BRAND} v{VERSION} 💀
 """)
 
@@ -506,10 +606,10 @@ async def cmd_list_superbrutal(client, message):
     await message.reply(f"{title_bar('SUPER BRUTAL LIST', '📋')}\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines) + f"\n{BRAND} 💀")
 
 # =============================================
-# COMMAND: AUTO MUTE (FIXED!)
+# COMMAND: AUTO MUTE
 # =============================================
 async def cmd_automute_on(client, message):
-    """Aktifin auto mute di grup ini"""
+    """Aktifin auto mute di grup ini dengan spam & nsfw detector"""
     global AUTOMUTE_GROUPS
     
     if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -524,7 +624,7 @@ async def cmd_automute_on(client, message):
         await message.reply(f"⚠️ Auto Mute already ON in {chat_title}")
         return
     
-    # CEK APAKAH USERBOT ADMIN (PAKE FUNGSI YANG BENER!)
+    # CEK APAKAH USERBOT ADMIN DAN PUNYA HAK RESTRICT
     bot_is_admin = await is_bot_admin(client, chat_id)
     bot_can_restrict = await can_restrict_members(client, chat_id)
     
@@ -537,10 +637,10 @@ async def cmd_automute_on(client, message):
 💀 USERBOT HARUS JADI ADMIN DULU!
 🔥 Caranya:
    1. Klik tiga titik di pojok kanan atas grup
-   2. Pilih "Kelola Grup"
+   2. Pilih "Kelola Grup" / "Manage Group"
    3. Pilih "Admin"
    4. Tambah @{me.username} sebagai admin
-   5. Centang semua hak, terutama "Restrict Members"
+   5. CENTANG SEMUA HAK, terutama "Restrict Members"
 
 📌 Setelah itu ketik .automute on lagi!
 {BRAND} 💀
@@ -569,16 +669,19 @@ async def cmd_automute_on(client, message):
 {info_line("Group", chat_title, "📌")}
 {info_line("Status", "ENABLED", "✅")}
 
-💀 AUTO MUTE ACTIVATED!
-🔥 Users who spam 5x will be muted for 5 minutes!
-💀 Admins are SAFE from auto mute!
+💀 **AUTO MUTE DENGAN SPAM & NSFW DETECTOR!**
+🔥 **Fitur:**
+   • Deteksi VVIP/VIP/Promosi → MUTE 30 MENIT
+   • Deteksi PAP/NSFW/Pornografi → MUTE 1 JAM
+   • Deteksi Spam biasa → MUTE 5-30 MENIT
 
-📌 Rules:
-   • 3-4 messages → WARNING
-   • 5-9 messages → MUTE 5 MINUTES
-   • 10-14 messages → MUTE 30 MINUTES
-   • 15+ messages → MUTE 1 HOUR
+📌 **Rules:**
+   • 3 messages → ⚠️ WARNING
+   • 5 messages → 🔇 MUTE 5 MINUTES
+   • 10 messages → 🔇 MUTE 30 MINUTES
+   • 15+ messages → 🔇 MUTE 1 HOUR
 
+💀 **Admin are SAFE from auto mute!**
 {BRAND} 💀
 """)
 
@@ -1128,10 +1231,10 @@ async def cmd_unblock_user(client, message):
         await message.reply(f"❌ Gagal: {e}")
 
 # =============================================
-# ULTRA BRUTAL HANDLER + AUTO MUTE (FIXED!)
+# ULTRA BRUTAL HANDLER + SPAM DETECTOR
 # =============================================
 async def ultra_brutal_handler(client, message):
-    """Handler super cepat - balas semua pesan + auto mute spammer!"""
+    """Handler super cepat - balas semua pesan + spam detector + auto mute!"""
     global is_afk, afk_pending_users, afk_approved_users, WHITELIST_GROUPS, BLOCKED_GROUPS, GBAN_USERS, SUPERBRUTAL_GROUPS, AUTOMUTE_GROUPS
     
     # SKIP COMMAND
@@ -1202,7 +1305,7 @@ async def ultra_brutal_handler(client, message):
     
     # GROUP CHAT
     if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
-        # AUTO MUTE SPAMMER (HANYA JIKA AUTO MUTE AKTIF DI GRUP INI)
+        # AUTO MUTE & SPAM DETECTOR (HANYA JIKA AUTO MUTE AKTIF)
         if chat_id in AUTOMUTE_GROUPS:
             user_name = message.from_user.first_name or message.from_user.username or str(message.from_user.id)
             await check_and_mute_spammer(client, chat_id, message.from_user.id, user_name, message)
@@ -1236,7 +1339,7 @@ async def ultra_brutal_handler(client, message):
 # =============================================
 @app_flask.route("/", methods=["GET"])
 def index():
-    return "💀 THE TAMERS ULTRA BRUTAL v5.0 - RUNNING ON RAILWAY 💀", 200
+    return "💀 THE TAMERS SPAM DETECTOR v6.0 - RUNNING ON RAILWAY 💀", 200
 
 @app_flask.route("/ping", methods=["GET"])
 def ping():
@@ -1261,14 +1364,15 @@ async def main():
     GBAN_USERS = load_gban_list()
     
     print("=" * 60)
-    print("💀 THE TAMERS v5.0 - AUTO MUTE FIX EDITION 💀")
+    print("💀 THE TAMERS v6.0 - SPAM & NSFW DETECTOR 💀")
     print("=" * 60)
     print(f"📋 GBAN: {len(GBAN_USERS)} victims")
     print(f"🚫 Blacklist: {len(BLOCKED_GROUPS)} groups")
     print(f"✅ Whitelist: {len(WHITELIST_GROUPS)} groups")
     print(f"🔥 Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups")
     print(f"🔇 Auto Mute: {len(AUTOMUTE_GROUPS)} groups")
-    print("⚡ Mode: ULTRA BRUTAL + AUTO MUTE!")
+    print("🛡️ SPAM Detector: ACTIVE")
+    print("🔞 NSFW Detector: ACTIVE")
     print("🌐 Platform: RAILWAY")
     print("")
     
@@ -1387,7 +1491,7 @@ async def main():
         async def _(c, m): await cmd_unmute(c, m)
         
         # =============================================
-        # ULTRA BRUTAL AUTO REPLY + AUTO MUTE
+        # ULTRA BRUTAL AUTO REPLY + SPAM DETECTOR
         # =============================================
         @client.on_message(filters.incoming & ~filters.me)
         async def auto_reply(c, m):
@@ -1395,9 +1499,9 @@ async def main():
         
         print("📌 ALL COMMANDS LOADED!")
         print("🔥 ULTRA BRUTAL MODE: ACTIVE!")
-        print("🔇 AUTO MUTE MODE: ACTIVE!")
-        print("💀 WILL REPLY TO EVERY MESSAGE & MUTE SPAMMERS!")
-        print("⚡ NO DELAY, NO FLOOD WAIT, NO LIMITS!")
+        print("🛡️ SPAM DETECTOR: ACTIVE!")
+        print("🔞 NSFW DETECTOR: ACTIVE!")
+        print("💀 SPAMMERS & NSFW WILL BE MUTED INSTANTLY!")
         print("")
         print(f"📌 Bot is RUNNING on Railway!")
         print(f"📌 Press Ctrl+C to stop...")
@@ -1407,7 +1511,6 @@ async def main():
         while True:
             await asyncio.sleep(60)
             print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔥 THE TAMERS STILL KILLING SPAMMERS! 🔥")
-            print(f"   📋 Super Brutal active in {len(SUPERBRUTAL_GROUPS)} groups")
             print(f"   🔇 Auto Mute active in {len(AUTOMUTE_GROUPS)} groups")
             
     except Exception as e:
