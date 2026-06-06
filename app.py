@@ -1,6 +1,6 @@
 """
-THE TAMERS USERBOT v5.0 - AUTO MUTE SPAMMER EDITION
-Mute otomatis user spam! Gak bakal mute admin!
+THE TAMERS USERBOT v5.0 - AUTO MUTE FIX EDITION
+FIXED: Auto mute sekarang WORK meskipun userbot admin!
 """
 
 import sys
@@ -14,7 +14,7 @@ import re
 import threading
 import time
 import ctypes
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Set, Dict
 from flask import Flask, request
 from concurrent.futures import ThreadPoolExecutor
@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, SessionRevoked, RPCError
 from pyrogram.types import Message, ChatPermissions
-from pyrogram.enums import ChatType, UserStatus
+from pyrogram.enums import ChatType, ChatMemberStatus
 
 # =============================================
 # MATIKAN SEMUA LOG
@@ -69,7 +69,7 @@ VERSION = "5.0.0"
 BLOCKED_GROUPS = set()
 WHITELIST_GROUPS = set()
 SUPERBRUTAL_GROUPS = set()
-AUTOMUTE_GROUPS = set()  # GRUP YANG AUTO MUTE NYALA
+AUTOMUTE_GROUPS = set()
 settings = {}
 is_afk = False
 afk_pending_users = {}
@@ -77,12 +77,12 @@ afk_approved_users = set()
 GBAN_USERS = set()
 
 # DATA PELACAK SPAM PER USER
-spam_counter: Dict[int, Dict[int, int]] = {}  # {group_id: {user_id: count}}
-spam_warned: Dict[int, Dict[int, bool]] = {}  # {group_id: {user_id: warned}}
-muted_users: Dict[int, Set[int]] = {}  # {group_id: {muted_user_ids}}
+spam_counter: Dict[int, Dict[int, int]] = {}
+spam_warned: Dict[int, Dict[int, bool]] = {}
+muted_users: Dict[int, Set[int]] = {}
 
 # =============================================
-# BRUTAL SPAM REPLIES (SEMUA PAKAI 💀 SEKARANG!)
+# BRUTAL SPAM REPLIES
 # =============================================
 BRUTAL_REPLIES = [
     "💀 **SPAM DETECTED! YOU ARE CURSED!** 💀",
@@ -105,12 +105,9 @@ BRUTAL_REPLIES = [
     "💀 **GET REKT SPAMMER!** 💀",
     "💀 **THE TAMERS NEVER SLEEP!** 💀",
     "💀 **SPAM = BANNED FOREVER!** 💀",
-    "💀 **AUTO MUTE ACTIVATED!** 💀",
-    "💀 **YOU ARE MUTED NOW!** 💀",
 ]
 
 SIMPLE_REPLIES = [
-    "hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀",
     "hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀",
     "hmm 💀", "ya 💀", "Y 💀", "iyaaa 💀", "oke 💀",
 ]
@@ -244,17 +241,45 @@ def save_gban_list(gban_set):
         json.dump({"gban_users": list(gban_set)}, f, indent=4)
 
 # =============================================
-# AUTO MUTE FUNCTIONS (FIX VERSION)
+# AUTO MUTE FUNCTIONS (FIXED 100%!)
 # =============================================
 
 async def is_admin(client, chat_id, user_id):
     """Cek apakah user adalah admin di grup"""
     try:
         member = await client.get_chat_member(chat_id, user_id)
-        admin_statuses = ["administrator", "creator"]
-        status = str(member.status).lower() if member.status else ""
-        return status in admin_statuses
-    except:
+        if member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+            return True
+        return False
+    except Exception as e:
+        print(f"Debug is_admin error: {e}")
+        return False
+
+async def is_bot_admin(client, chat_id):
+    """Cek apakah userbot adalah admin di grup"""
+    try:
+        me = await client.get_me()
+        member = await client.get_chat_member(chat_id, me.id)
+        if member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+            return True
+        return False
+    except Exception as e:
+        print(f"Debug is_bot_admin error: {e}")
+        return False
+
+async def can_restrict_members(client, chat_id):
+    """Cek apakah bot punya hak restrict members"""
+    try:
+        me = await client.get_me()
+        member = await client.get_chat_member(chat_id, me.id)
+        if member.status == ChatMemberStatus.ADMINISTRATOR:
+            if member.privileges and member.privileges.can_restrict_members:
+                return True
+        elif member.status == ChatMemberStatus.OWNER:
+            return True
+        return False
+    except Exception as e:
+        print(f"Debug can_restrict error: {e}")
         return False
 
 async def mute_user(client, chat_id, user_id, duration=60):
@@ -288,7 +313,7 @@ async def unmute_user(client, chat_id, user_id):
         return False
 
 async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
-    """Cek dan mute spammer jika perlu (FIX VERSION)"""
+    """Cek dan mute spammer jika perlu"""
     global spam_counter, spam_warned, muted_users
     
     if chat_id not in AUTOMUTE_GROUPS:
@@ -298,15 +323,8 @@ async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
     if await is_admin(client, chat_id, user_id):
         return False
     
-    # CEK APAKAH USERBOT ADMIN
-    me = await client.get_me()
-    bot_is_admin = False
-    try:
-        bot_member = await client.get_chat_member(chat_id, me.id)
-        bot_status = str(bot_member.status).lower() if bot_member.status else ""
-        bot_is_admin = bot_status in ["administrator", "creator"]
-    except:
-        bot_is_admin = False
+    # CEK APAKAH USERBOT ADMIN DAN PUNYA HAK RESTRICT
+    bot_can_mute = await can_restrict_members(client, chat_id)
     
     # Inisialisasi counter
     if chat_id not in spam_counter:
@@ -323,17 +341,16 @@ async def check_and_mute_spammer(client, chat_id, user_id, user_name, message):
     # LEVEL 1: PERINGATAN (3-4 pesan)
     if count == 3 and not spam_warned[chat_id].get(user_id, False):
         spam_warned[chat_id][user_id] = True
-        if bot_is_admin:
+        if bot_can_mute:
             await message.reply(f"💀 **PERINGATAN!** @{user_name} JANGAN SPAM! Kalo sampai 5x bakal kena MUTE 5 menit! 💀")
         else:
-            await message.reply(f"💀 **PERINGATAN!** @{user_name} JANGAN SPAM! (Userbot bukan admin, jadi gak bisa mute) 💀")
+            await message.reply(f"💀 **PERINGATAN!** @{user_name} JANGAN SPAM! (Userbot bukan admin/punya hak restrict, jadi gak bisa mute) 💀")
         return False
     
-    # KALO USERBOT BUKAN ADMIN, STOP DISINI (GAK BISA MUTE)
-    if not bot_is_admin:
-        # TAPI TETAP HITUNG BUAT PERINGATAN
-        if count >= 5:
-            await message.reply(f"⚠️ @{user_name} UDAH {count}x SPAM! TAPI USERBOT BUKAN ADMIN JADI GAK BISA MUTE! 💀")
+    # KALO USERBOT GAK BISA MUTE, STOP DISINI
+    if not bot_can_mute:
+        if count >= 5 and count % 5 == 0:
+            await message.reply(f"⚠️ @{user_name} UDAH {count}x SPAM! TAPI USERBOT BUKAN ADMIN ATAU GAK PUNYA HAK RESTRICT MEMBERS! 💀")
         return False
     
     # LEVEL 2: MUTE 5 MENIT (5-9 pesan)
@@ -489,7 +506,7 @@ async def cmd_list_superbrutal(client, message):
     await message.reply(f"{title_bar('SUPER BRUTAL LIST', '📋')}\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines) + f"\n{BRAND} 💀")
 
 # =============================================
-# COMMAND: AUTO MUTE (PER GRUP - KAYAK GRUP ON)
+# COMMAND: AUTO MUTE (FIXED!)
 # =============================================
 async def cmd_automute_on(client, message):
     """Aktifin auto mute di grup ini"""
@@ -501,27 +518,47 @@ async def cmd_automute_on(client, message):
     
     chat_id = message.chat.id
     chat_title = message.chat.title or "Grup"
+    me = await client.get_me()
     
-    # CEK APAKAH USERBOT JADI ADMIN
-    try:
-        bot_member = await client.get_chat_member(chat_id, (await client.get_me()).id)
-        if bot_member.status not in ["administrator", "creator"]:
-            await message.reply(f"""
+    if chat_id in AUTOMUTE_GROUPS:
+        await message.reply(f"⚠️ Auto Mute already ON in {chat_title}")
+        return
+    
+    # CEK APAKAH USERBOT ADMIN (PAKE FUNGSI YANG BENER!)
+    bot_is_admin = await is_bot_admin(client, chat_id)
+    bot_can_restrict = await can_restrict_members(client, chat_id)
+    
+    if not bot_is_admin:
+        await message.reply(f"""
 {title_bar("AUTO MUTE", "❌")}
 {info_line("Group", chat_title, "📌")}
 {info_line("Status", "FAILED", "⚠️")}
 
-💀 USERBOT HARUS JADI ADMIN DULU GOBLOK!
-🔥 Jadikan userbot sebagai admin grup baru bisa auto mute!
+💀 USERBOT HARUS JADI ADMIN DULU!
+🔥 Caranya:
+   1. Klik tiga titik di pojok kanan atas grup
+   2. Pilih "Kelola Grup"
+   3. Pilih "Admin"
+   4. Tambah @{me.username} sebagai admin
+   5. Centang semua hak, terutama "Restrict Members"
+
+📌 Setelah itu ketik .automute on lagi!
 {BRAND} 💀
 """)
-            return
-    except:
-        await message.reply(f"{title_bar('AUTO MUTE', '❌')}\nGagal cek status admin! Pastikan userbot admin di grup!\n{BRAND} 💀")
         return
     
-    if chat_id in AUTOMUTE_GROUPS:
-        await message.reply(f"⚠️ Auto Mute already ON in {chat_title}")
+    if not bot_can_restrict:
+        await message.reply(f"""
+{title_bar("AUTO MUTE", "⚠️")}
+{info_line("Group", chat_title, "📌")}
+{info_line("Status", "LIMITED", "⚠️")}
+
+💀 USERBOT ADMIN TAPI GAK PUNYA HAK RESTRICT MEMBERS!
+🔥 Edit admin @{me.username} dan centang "Restrict Members"!
+
+📌 Setelah itu ketik .automute on lagi!
+{BRAND} 💀
+""")
         return
     
     AUTOMUTE_GROUPS.add(chat_id)
@@ -535,6 +572,13 @@ async def cmd_automute_on(client, message):
 💀 AUTO MUTE ACTIVATED!
 🔥 Users who spam 5x will be muted for 5 minutes!
 💀 Admins are SAFE from auto mute!
+
+📌 Rules:
+   • 3-4 messages → WARNING
+   • 5-9 messages → MUTE 5 MINUTES
+   • 10-14 messages → MUTE 30 MINUTES
+   • 15+ messages → MUTE 1 HOUR
+
 {BRAND} 💀
 """)
 
@@ -1084,7 +1128,7 @@ async def cmd_unblock_user(client, message):
         await message.reply(f"❌ Gagal: {e}")
 
 # =============================================
-# ULTRA BRUTAL HANDLER + AUTO MUTE!
+# ULTRA BRUTAL HANDLER + AUTO MUTE (FIXED!)
 # =============================================
 async def ultra_brutal_handler(client, message):
     """Handler super cepat - balas semua pesan + auto mute spammer!"""
@@ -1158,22 +1202,10 @@ async def ultra_brutal_handler(client, message):
     
     # GROUP CHAT
     if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
-        # ==========================================
-        # AUTO MUTE SPAMMER (HANYA JIKA ADMIN!)
-        # ==========================================
+        # AUTO MUTE SPAMMER (HANYA JIKA AUTO MUTE AKTIF DI GRUP INI)
         if chat_id in AUTOMUTE_GROUPS:
-            # CEK APAKAH USERBOT ADMIN (KALO GA ADMIN, AUTO MUTE GAK BISA JALAN!)
-            try:
-                bot_member = await client.get_chat_member(chat_id, me.id)
-                if bot_member.status in ["administrator", "creator"]:
-                    # PROSES AUTO MUTE
-                    user_name = message.from_user.first_name or message.from_user.username or str(message.from_user.id)
-                    await check_and_mute_spammer(client, chat_id, message.from_user.id, user_name, message)
-                else:
-                    # KALO GA ADMIN, SKIP AUTO MUTE TAPI TETEP BALAS PESAN
-                    pass
-            except:
-                pass
+            user_name = message.from_user.first_name or message.from_user.username or str(message.from_user.id)
+            await check_and_mute_spammer(client, chat_id, message.from_user.id, user_name, message)
         
         # PRIORITAS 1: SUPER BRUTAL (BALAS SEMUA PESAN!)
         if chat_id in SUPERBRUTAL_GROUPS:
@@ -1229,7 +1261,7 @@ async def main():
     GBAN_USERS = load_gban_list()
     
     print("=" * 60)
-    print("💀 THE TAMERS v5.0 - AUTO MUTE SPAMMER EDITION 💀")
+    print("💀 THE TAMERS v5.0 - AUTO MUTE FIX EDITION 💀")
     print("=" * 60)
     print(f"📋 GBAN: {len(GBAN_USERS)} victims")
     print(f"🚫 Blacklist: {len(BLOCKED_GROUPS)} groups")
@@ -1363,7 +1395,7 @@ async def main():
         
         print("📌 ALL COMMANDS LOADED!")
         print("🔥 ULTRA BRUTAL MODE: ACTIVE!")
-        print("🔇 AUTO MUTE MODE: ACTIVE (if userbot is admin)!")
+        print("🔇 AUTO MUTE MODE: ACTIVE!")
         print("💀 WILL REPLY TO EVERY MESSAGE & MUTE SPAMMERS!")
         print("⚡ NO DELAY, NO FLOOD WAIT, NO LIMITS!")
         print("")
@@ -1386,8 +1418,6 @@ async def main():
 # RUN
 # =============================================
 if __name__ == "__main__":
-    from datetime import timedelta
-    
     # Jalanin Flask di thread background
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
