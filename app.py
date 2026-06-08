@@ -1,7 +1,8 @@
 """
-THE TAMERS USERBOT v9.0 - ULTRA NSFW DETECTOR + GCAST
+THE TAMERS USERBOT v9.0 - ULTRA NSFW DETECTOR + GCAST + HELP
 Deteksi semua variasi NSFW/promo/spam dengan simbol, angka, font unik!
 GCAST/UCAST/SPAM FULLY WORKING!
+Fitur .help untuk melihat semua command!
 """
 
 import sys
@@ -1042,6 +1043,78 @@ Status: ✅ NOT DETECTED
 """)
 
 # =============================================
+# COMMAND: HELP (MENAMPILKAN SEMUA FITUR)
+# =============================================
+async def cmd_help(client, message):
+    """Menampilkan semua command yang tersedia di THE TAMERS"""
+    help_text = f"""
+{title_bar("THE TAMERS COMMANDS", "💀")}
+
+┃ {title_bar("⚡ BASIC COMMANDS", "⚡")}
+┃ ├─ `.ping` - Cek kecepatan response bot
+┃ ├─ `.status` - Lihat status bot (uptime, victims, dll)
+┃ ├─ `.info` - Lihat informasi akun userbot
+┃ ├─ `.afk` - Aktifkan mode AFK (Away From Keyboard)
+┃ └─ `.unafk` - Nonaktifkan mode AFK
+
+┃ {title_bar("🔇 AUTO MUTE & DETEKSI", "🔇")}
+┃ ├─ `.automute on` - Aktifkan auto mute (NSFW/Promo/Spam)
+┃ ├─ `.automute off` - Nonaktifkan auto mute
+┃ ├─ `.listautomute` - Lihat grup dengan auto mute aktif
+┃ └─ `.testdetect` - Test deteksi pesan (reply ke pesan)
+
+┃ {title_bar("🔥 SUPER BRUTAL", "🔥")}
+┃ ├─ `.superbrutal on` - Aktifkan super brutal (balas SEMUA pesan)
+┃ ├─ `.superbrutal off` - Nonaktifkan super brutal
+┃ └─ `.listsuperbrutal` - Lihat grup dengan super brutal aktif
+
+┃ {title_bar("🤖 AUTO REPLY", "🤖")}
+┃ ├─ `.grup on` - Aktifkan auto reply di grup ini
+┃ ├─ `.grup off` - Nonaktifkan auto reply di grup ini
+┃ ├─ `.listgrup` - Lihat grup dengan auto reply aktif
+┃ ├─ `.private on` - Aktifkan auto reply di private chat
+┃ └─ `.private off` - Nonaktifkan auto reply di private chat
+
+┃ {title_bar("🚫 BLACKLIST", "🚫")}
+┃ ├─ `.addbl` - Blacklist grup ini (userbot gak bakal balas)
+┃ ├─ `.rmbl` - Hapus grup dari blacklist
+┃ └─ `.listbl` - Lihat daftar grup yang diblacklist
+
+┃ {title_bar("📢 BROADCAST", "📢")}
+┃ ├─ `.gcast <pesan>` - Broadcast pesan ke SEMUA grup (kecuali blacklist)
+┃ ├─ `.ucast_all <pesan>` - Broadcast pesan ke SEMUA private chat
+┃ └─ `.spam <jumlah> <pesan>` - Spam pesan ke grup saat ini
+
+┃ {title_bar("💀 GBAN NUCLEAR", "💀")}
+┃ ├─ `.gban @username/reply` - GBAN user (report + block + silent)
+┃ ├─ `.ungban @username/reply` - Hapus user dari GBAN list
+┃ └─ `.listgban` - Lihat daftar korban GBAN
+
+┃ {title_bar("👤 AFK APPROVAL", "👤")}
+┃ ├─ `.acc @username/reply` - Approve user (bisa chat saat AFK)
+┃ ├─ `.reject @username/reply` - Tolak/block user
+┃ ├─ `.afklist` - Lihat daftar user pending AFK
+┃ └─ `.unblock @username/reply` - Unblock user
+
+{title_bar("🎯 DETECTION TYPES", "🎯")}
+┃ 🔞 **NSFW CONTENT** → MUTE 1 JAM
+┃   (pornografi, konten dewasa, 18+, vulgar)
+┃ 📢 **PROMOTION/ADS** → MUTE 30 MENIT
+┃   (iklan, promo, jualan, vip, vvip, murmer)
+┃ 💀 **SPAM** → MUTE 10 MENIT
+┃   (spam chat, ajakan chat, dm, pm, hyper, dll)
+
+{title_bar("💀 SUPPORT", "💀")}
+┃ 📌 Bot aktif di grup dengan auto mute ON
+┃ 📌 Userbot HARUS jadi ADMIN dengan hak RESTRICT MEMBERS
+┃ 📌 GBAN berjalan SILENT tanpa pemberitahuan ke target
+┃ 📌 Semua pesan spam/nsfw akan otomatis di MUTE
+
+{BRAND} v{VERSION} 💀
+"""
+    await message.reply(help_text)
+
+# =============================================
 # COMMAND: AFK APPROVAL
 # =============================================
 async def cmd_approve(client, message):
@@ -1253,7 +1326,7 @@ async def ultra_brutal_handler(client, message):
         
         if chat_id in BLOCKED_GROUPS:
             return
-    
+
 # =============================================
 # FLASK ROUTES
 # =============================================
@@ -1270,82 +1343,6 @@ def run_flask():
     app_flask.run(host="0.0.0.0", port=port, threaded=True)
 
 # =============================================
-# COMMAND: HELP (MENAMPILKAN SEMUA FITUR)
-# =============================================
-async def cmd_help(client, message):
-    """Menampilkan semua command yang tersedia di THE TAMERS"""
-    help_text = f"""
-{title_bar("THE TAMERS COMMANDS", "💀")}
-
-┃ {title_bar("⚡ BASIC COMMANDS", "⚡")}
-┃ ├─ `.ping` - Cek kecepatan response bot
-┃ ├─ `.status` - Lihat status bot (uptime, victims, dll)
-┃ ├─ `.info` - Lihat informasi akun userbot
-┃ ├─ `.afk` - Aktifkan mode AFK (Away From Keyboard)
-┃ └─ `.unafk` - Nonaktifkan mode AFK
-
-┃ {title_bar("🔇 AUTO MUTE & DETEKSI", "🔇")}
-┃ ├─ `.automute on` - Aktifkan auto mute (NSFW/Promo/Spam)
-┃ ├─ `.automute off` - Nonaktifkan auto mute
-┃ ├─ `.listautomute` - Lihat grup dengan auto mute aktif
-┃ └─ `.testdetect` - Test deteksi pesan (reply ke pesan)
-
-┃ {title_bar("🔥 SUPER BRUTAL", "🔥")}
-┃ ├─ `.superbrutal on` - Aktifkan super brutal (balas SEMUA pesan)
-┃ ├─ `.superbrutal off` - Nonaktifkan super brutal
-┃ └─ `.listsuperbrutal` - Lihat grup dengan super brutal aktif
-
-┃ {title_bar("🤖 AUTO REPLY", "🤖")}
-┃ ├─ `.grup on` - Aktifkan auto reply di grup ini
-┃ ├─ `.grup off` - Nonaktifkan auto reply di grup ini
-┃ ├─ `.listgrup` - Lihat grup dengan auto reply aktif
-┃ ├─ `.private on` - Aktifkan auto reply di private chat
-┃ └─ `.private off` - Nonaktifkan auto reply di private chat
-
-┃ {title_bar("🚫 BLACKLIST", "🚫")}
-┃ ├─ `.addbl` - Blacklist grup ini (userbot gak bakal balas)
-┃ ├─ `.rmbl` - Hapus grup dari blacklist
-┃ └─ `.listbl` - Lihat daftar grup yang diblacklist
-
-┃ {title_bar("📢 BROADCAST", "📢")}
-┃ ├─ `.gcast <pesan>` - Broadcast pesan ke SEMUA grup (kecuali blacklist)
-┃ ├─ `.ucast_all <pesan>` - Broadcast pesan ke SEMUA private chat
-┃ └─ `.spam <jumlah> <pesan>` - Spam pesan ke grup saat ini
-
-┃ {title_bar("💀 GBAN NUCLEAR", "💀")}
-┃ ├─ `.gban @username/reply` - GBAN user (report + block + silent)
-┃ ├─ `.ungban @username/reply` - Hapus user dari GBAN list
-┃ └─ `.listgban` - Lihat daftar korban GBAN
-
-┃ {title_bar("👤 AFK APPROVAL", "👤")}
-┃ ├─ `.acc @username/reply` - Approve user (bisa chat saat AFK)
-┃ ├─ `.reject @username/reply` - Tolak/block user
-┃ ├─ `.afklist` - Lihat daftar user pending AFK
-┃ └─ `.unblock @username/reply` - Unblock user
-
-{title_bar("DETECTION TYPES", "🎯")}
-┃ 🔞 **NSFW CONTENT** → MUTE 1 JAM
-┃   (pornografi, konten dewasa, 18+, vulgar)
-┃ 📢 **PROMOTION/ADS** → MUTE 30 MENIT
-┃   (iklan, promo, jualan, vip, vvip, murmer)
-┃ 💀 **SPAM** → MUTE 10 MENIT
-┃   (spam chat, ajakan chat, dm, pm, hyper, dll)
-
-{title_bar("SUPPORT", "💀")}
-┃ 📌 Bot aktif di grup dengan auto mute ON
-┃ 📌 Userbot HARUS jadi ADMIN dengan hak RESTRICT MEMBERS
-┃ 📌 GBAN berjalan SILENT tanpa pemberitahuan ke target
-┃ 📌 Semua pesan spam/nsfw akan otomatis di MUTE
-
-{BRAND} v{VERSION} 💀
-"""
-    await message.reply(help_text)
-
-# Register command help
-@client.on_message(filters.me & filters.command("help", prefixes="."))
-async def _(c, m): await cmd_help(c, m)
-    
-# =============================================
 # MAIN
 # =============================================
 async def main():
@@ -1359,13 +1356,14 @@ async def main():
     GBAN_USERS = load_gban_list()
     
     print("=" * 50)
-    print("💀 THE TAMERS v9.0 - ULTRA NSFW DETECTOR + GCAST 💀")
+    print("💀 THE TAMERS v9.0 - ULTRA NSFW DETECTOR + GCAST + HELP 💀")
     print("=" * 50)
     print(f"📋 GBAN: {len(GBAN_USERS)} victims")
     print(f"🔥 Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups")
     print(f"🔇 Auto Mute: {len(AUTOMUTE_GROUPS)} groups")
     print("🔞 NSFW Detector: ULTRA SENSITIVE")
     print("📢 GCAST: FULLY WORKING")
+    print("📋 HELP: AVAILABLE (.help)")
     print("")
     
     session_string = os.getenv("SESSION_STRING")
@@ -1468,6 +1466,9 @@ async def main():
         @client.on_message(filters.me & filters.command("testdetect", prefixes="."))
         async def _(c, m): await cmd_test_detect(c, m)
         
+        @client.on_message(filters.me & filters.command("help", prefixes="."))
+        async def _(c, m): await cmd_help(c, m)
+        
         @client.on_message(filters.incoming & ~filters.me)
         async def auto_reply(c, m):
             await ultra_brutal_handler(c, m)
@@ -1475,6 +1476,7 @@ async def main():
         print("📌 ALL COMMANDS LOADED!")
         print("💀 NSFW DETECTOR: ULTRA SENSITIVE!")
         print("📢 GCAST: FULLY WORKING!")
+        print("📋 .help - SHOW ALL COMMANDS")
         print("")
         print(f"📌 Bot RUNNING on Railway!")
         print(f"📌 Press Ctrl+C to stop...")
