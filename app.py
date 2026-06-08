@@ -1255,6 +1255,82 @@ async def ultra_brutal_handler(client, message):
             return
 
 # =============================================
+# COMMAND: HELP (MENAMPILKAN SEMUA FITUR)
+# =============================================
+async def cmd_help(client, message):
+    """Menampilkan semua command yang tersedia di THE TAMERS"""
+    help_text = f"""
+{title_bar("THE TAMERS COMMANDS", "💀")}
+
+┃ {title_bar("⚡ BASIC COMMANDS", "⚡")}
+┃ ├─ `.ping` - Cek kecepatan response bot
+┃ ├─ `.status` - Lihat status bot (uptime, victims, dll)
+┃ ├─ `.info` - Lihat informasi akun userbot
+┃ ├─ `.afk` - Aktifkan mode AFK (Away From Keyboard)
+┃ └─ `.unafk` - Nonaktifkan mode AFK
+
+┃ {title_bar("🔇 AUTO MUTE & DETEKSI", "🔇")}
+┃ ├─ `.automute on` - Aktifkan auto mute (NSFW/Promo/Spam)
+┃ ├─ `.automute off` - Nonaktifkan auto mute
+┃ ├─ `.listautomute` - Lihat grup dengan auto mute aktif
+┃ └─ `.testdetect` - Test deteksi pesan (reply ke pesan)
+
+┃ {title_bar("🔥 SUPER BRUTAL", "🔥")}
+┃ ├─ `.superbrutal on` - Aktifkan super brutal (balas SEMUA pesan)
+┃ ├─ `.superbrutal off` - Nonaktifkan super brutal
+┃ └─ `.listsuperbrutal` - Lihat grup dengan super brutal aktif
+
+┃ {title_bar("🤖 AUTO REPLY", "🤖")}
+┃ ├─ `.grup on` - Aktifkan auto reply di grup ini
+┃ ├─ `.grup off` - Nonaktifkan auto reply di grup ini
+┃ ├─ `.listgrup` - Lihat grup dengan auto reply aktif
+┃ ├─ `.private on` - Aktifkan auto reply di private chat
+┃ └─ `.private off` - Nonaktifkan auto reply di private chat
+
+┃ {title_bar("🚫 BLACKLIST", "🚫")}
+┃ ├─ `.addbl` - Blacklist grup ini (userbot gak bakal balas)
+┃ ├─ `.rmbl` - Hapus grup dari blacklist
+┃ └─ `.listbl` - Lihat daftar grup yang diblacklist
+
+┃ {title_bar("📢 BROADCAST", "📢")}
+┃ ├─ `.gcast <pesan>` - Broadcast pesan ke SEMUA grup (kecuali blacklist)
+┃ ├─ `.ucast_all <pesan>` - Broadcast pesan ke SEMUA private chat
+┃ └─ `.spam <jumlah> <pesan>` - Spam pesan ke grup saat ini
+
+┃ {title_bar("💀 GBAN NUCLEAR", "💀")}
+┃ ├─ `.gban @username/reply` - GBAN user (report + block + silent)
+┃ ├─ `.ungban @username/reply` - Hapus user dari GBAN list
+┃ └─ `.listgban` - Lihat daftar korban GBAN
+
+┃ {title_bar("👤 AFK APPROVAL", "👤")}
+┃ ├─ `.acc @username/reply` - Approve user (bisa chat saat AFK)
+┃ ├─ `.reject @username/reply` - Tolak/block user
+┃ ├─ `.afklist` - Lihat daftar user pending AFK
+┃ └─ `.unblock @username/reply` - Unblock user
+
+{title_bar("DETECTION TYPES", "🎯")}
+┃ 🔞 **NSFW CONTENT** → MUTE 1 JAM
+┃   (pornografi, konten dewasa, 18+, vulgar)
+┃ 📢 **PROMOTION/ADS** → MUTE 30 MENIT
+┃   (iklan, promo, jualan, vip, vvip, murmer)
+┃ 💀 **SPAM** → MUTE 10 MENIT
+┃   (spam chat, ajakan chat, dm, pm, hyper, dll)
+
+{title_bar("SUPPORT", "💀")}
+┃ 📌 Bot aktif di grup dengan auto mute ON
+┃ 📌 Userbot HARUS jadi ADMIN dengan hak RESTRICT MEMBERS
+┃ 📌 GBAN berjalan SILENT tanpa pemberitahuan ke target
+┃ 📌 Semua pesan spam/nsfw akan otomatis di MUTE
+
+{BRAND} v{VERSION} 💀
+"""
+    await message.reply(help_text)
+
+# Register command help
+@client.on_message(filters.me & filters.command("help", prefixes="."))
+async def _(c, m): await cmd_help(c, m)
+    
+# =============================================
 # FLASK ROUTES
 # =============================================
 @app_flask.route("/", methods=["GET"])
