@@ -1253,6 +1253,21 @@ async def ultra_brutal_handler(client, message):
         
         if chat_id in BLOCKED_GROUPS:
             return
+    
+# =============================================
+# FLASK ROUTES
+# =============================================
+@app_flask.route("/", methods=["GET"])
+def index():
+    return "💀 THE TAMERS v9.0 - RUNNING 💀", 200
+
+@app_flask.route("/ping", methods=["GET"])
+def ping():
+    return "pong", 200
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8080))
+    app_flask.run(host="0.0.0.0", port=port, threaded=True)
 
 # =============================================
 # COMMAND: HELP (MENAMPILKAN SEMUA FITUR)
@@ -1330,21 +1345,6 @@ async def cmd_help(client, message):
 @client.on_message(filters.me & filters.command("help", prefixes="."))
 async def _(c, m): await cmd_help(c, m)
     
-# =============================================
-# FLASK ROUTES
-# =============================================
-@app_flask.route("/", methods=["GET"])
-def index():
-    return "💀 THE TAMERS v9.0 - RUNNING 💀", 200
-
-@app_flask.route("/ping", methods=["GET"])
-def ping():
-    return "pong", 200
-
-def run_flask():
-    port = int(os.environ.get("PORT", 8080))
-    app_flask.run(host="0.0.0.0", port=port, threaded=True)
-
 # =============================================
 # MAIN
 # =============================================
