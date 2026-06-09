@@ -1,6 +1,6 @@
 """
-THE TAMERS USERBOT v10.0 - PERMANENT AUTO MUTE + REFRESH COMMAND
-Auto mute GAK BAKAL OFF SENDIRI! Bisa refresh via command!
+THE TAMERS USERBOT v11.0 - ULTRA NSFW DETECTOR + MENTION SPAM + 1 WEEK MUTE
+NSFW = MUTE 1 MINGGU! Mention spam = MUTE 1 MENIT!
 """
 
 import sys
@@ -63,7 +63,7 @@ SUPERBRUTAL_FILE = "superbrutal_groups.json"
 AUTOMUTE_FILE = "automute_groups.json"
 BOT_START_TIME = time.time()
 BRAND = "THE TAMERS"
-VERSION = "10.0.0"
+VERSION = "11.0.0"
 
 # =============================================
 # DATA GLOBAL
@@ -77,9 +77,6 @@ is_afk = False
 afk_pending_users = {}
 afk_approved_users = set()
 GBAN_USERS = set()
-
-# Flag untuk refresh
-refresh_requested = False
 
 # =============================================
 # FUNGSI NORMALISASI TEKS (SUPER SENSITIVE!)
@@ -95,6 +92,10 @@ CHAR_MAP = {
     '𝗾': 'q', '𝗿': 'r', '𝗳': 'f', '𝗱': 'd', '𝗲': 'e',
     'ᴘ': 'p', 'ʀ': 'r', 'ᴏ': 'o', 'ꜰ': 'f', 'ɪ': 'i', 'ʟ': 'l',
     'ᴇ': 'e', 'ᴄ': 'c', 'ᴋ': 'k', 'ᴠ': 'v', 'ʙ': 'b',
+    'α': 'a', 'β': 'b', 'γ': 'g', 'δ': 'd', 'ε': 'e', 'ζ': 'z',
+    'η': 'h', 'θ': 'th', 'ι': 'i', 'κ': 'k', 'λ': 'l', 'μ': 'm',
+    'ν': 'n', 'ξ': 'x', 'ο': 'o', 'π': 'p', 'ρ': 'r', 'σ': 's',
+    'τ': 't', 'υ': 'y', 'φ': 'f', 'χ': 'ch', 'ψ': 'ps', 'ω': 'w',
 }
 
 def normalize_unicode_text(text: str) -> str:
@@ -109,13 +110,27 @@ def normalize_unicode_text(text: str) -> str:
     return text
 
 def ultra_detect(text: str) -> Tuple[bool, str]:
+    """Deteksi ultra sensitif untuk semua jenis spam/nsfw/promo"""
     if not text:
         return False, None
     
     normalized = normalize_unicode_text(text)
     
-    # NSFW Patterns
+    # ==========================================
+    # POLA NSFW / PORNOGRAFI (WAJIB MUTE 1 MINGGU!)
+    # ==========================================
     nsfw_patterns = [
+        # Contoh baru dari user
+        r'srbu\s*pciessss', r'srbu\s*pciess', r'pciessss', r'pcies',
+        r'prmowwwwwww', r'promowww', r'yugs\s*bub', r'yugs bub',
+        r'pke\s*hijab', r'km\s*snge', r'snge\s*ga', r'snge',
+        r'-1\s*co\s*perhatian', r'co\s*perhatian', r'coperhatian',
+        r'openvcees', r'open\s*vcees', r'fullbody', r'smpecrothh',
+        r'colii', r'mau\s*colii', r'colii\?',
+        r'αძα', r'⍴rоmо', r'vcᥱᥱs', r'vіαі⍴у', r'prіხαძіᥱ', r'orძᥱr',
+        r'𝒍𝒂𝒈𝒊\s*𝒓𝒊𝒅𝒊𝒊', r'𝒗𝒄𝒔\s*𝒗𝒊𝒑', r'𝒑𝒓𝒐𝒎𝒐𝒐𝒐', r'𝒔𝒖𝒏𝒈𝒈\s*𝒄𝒆𝒕',
+        
+        # Kata kunci NSFW sebelumnya
         r'bohcil', r'bh0cill?', r'b0hci?l', r'bohcill?', r'b0hcil',
         r'fresh', r'f+r+e+s+h+', r'tribru', r'tbr?u', r'dibiiyoh', r'dbyooh',
         r'vid vip', r'vip', r'v1p', r'vvip', r'cwokk', r'cwo?kk?', r'cwoo',
@@ -127,30 +142,45 @@ def ultra_detect(text: str) -> Tuple[bool, str]:
         r'ml', r'melayani', r'ngocok', r'coli', r'toket', r'tete',
         r'memek', r'kontol', r'pepek', r'peler', r'pantat', r'pap', r'nudes',
         r'nude', r'telanjang', r'18\+', r'18\s?\+', r'dewasa', r'hot',
+        
+        # Deteksi teks dengan simbol unik
+        r'[αβγδεζηθικλμνξοπρστυφχψω]',
+        r'[𝒂-𝒛]',
+        r'[𝕒-𝕫]',
+        r'[𝗮-𝘇]',
     ]
     
     for pattern in nsfw_patterns:
         if re.search(pattern, normalized, re.IGNORECASE):
             return True, "nsfw"
+        if re.search(pattern, text, re.IGNORECASE):
+            return True, "nsfw"
     
-    # Promo Patterns
+    # ==========================================
+    # POLA PROMOSI / IKLAN
+    # ==========================================
     promo_patterns = [
         r'promosi', r'promo', r'iklan', r'jual', r'beli', r'toko',
         r'shop', r'dagang', r'jualan', r'vvip', r'vip', r'murmer',
         r'murah', r'diskon', r'followers', r'like', r'shopee',
         r'tokopedia', r'lazada', r'open\s+order', r'order',
+        r'prmowww', r'promowww', r'yugs\s+bub', r'promo\s+ban',
+        r'vc\s*vip', r'vcs\s*vip',
     ]
     
     for pattern in promo_patterns:
         if re.search(pattern, normalized, re.IGNORECASE):
             return True, "promo"
     
-    # Spam Patterns
+    # ==========================================
+    # POLA SPAM UMUM
+    # ==========================================
     spam_patterns = [
         r'y+u+u+u?\s*c+h+a+t+t?', r'1c+w+o+o+o?', r'c+w+o+o+',
         r'v+i+c+e+e+s+', r'a+n+g+e+e?', r'l+i+m+i+t+t+',
         r'h+y+p+r+r+', r'd+m+', r'p+m+', r'p+c+', r'c+o+w+o+',
         r's+a+y+a+n+g+', r'm+a+m+p+i+r+', r'bh0+c+i+l+',
+        r'srbu', r'pcies', r'yugs', r'bub', r'snge', r'colii',
     ]
     
     for pattern in spam_patterns:
@@ -176,8 +206,14 @@ def contains_forbidden_keywords(text: str) -> Tuple[bool, str]:
 # BRUTAL REPLIES
 # =============================================
 BRUTAL_REPLIES = ["💀 SPAM DETECTED! 💀", "💀 THE TAMERS DON'T TOLERATE SPAM! 💀"]
-NSFW_REPLIES = ["💀 KONTEN DEWASA TERDETEKSI! MUTE 1 JAM! 💀", "🔞 NSFW DETECTED! MUTED! 🔞"]
+NSFW_REPLIES = [
+    "💀 **KONTEN DEWASA TERDETEKSI! MUTE 1 MINGGU!** 💀",
+    "🔞 **NSFW DETECTED! MUTED FOR 1 WEEK!** 🔞",
+    "💀 **PORNOGRAFI DILARANG! MUTE 7 HARI!** 💀",
+    "🔞 **YOUR ACCOUNT HAS BEEN REPORTED! MUTED 1 WEEK!** 🔞",
+]
 PROMO_REPLIES = ["💀 PROMOSI DILARANG! MUTE 30 MENIT! 💀"]
+MENTION_REPLIES_BRUTAL = ["💀 **MENTION SPAM DETECTED! MUTE 1 MENIT!** 💀\nJangan tag orang lain sembarangan!"]
 SIMPLE_REPLIES = ["hmm 💀", "ya 💀", "Y 💀", "oke 💀"]
 MENTION_REPLIES = ["hmm? 💀", "ya? 💀"]
 AFK_REPLY = "💀 THE TAMERS lagi AFK, sabar ya! 💀"
@@ -185,6 +221,7 @@ AFK_REPLY = "💀 THE TAMERS lagi AFK, sabar ya! 💀"
 def get_brutal_reply(): return random.choice(BRUTAL_REPLIES)
 def get_nsfw_reply(): return random.choice(NSFW_REPLIES)
 def get_promo_reply(): return random.choice(PROMO_REPLIES)
+def get_mention_spam_reply(): return random.choice(MENTION_REPLIES_BRUTAL)
 def get_simple_reply(): return random.choice(SIMPLE_REPLIES)
 def get_mention_reply(): return random.choice(MENTION_REPLIES)
 
@@ -263,7 +300,6 @@ def save_superbrutal_groups(groups):
         json.dump({"superbrutal_groups": list(groups)}, f, indent=4)
 
 def load_automute_groups():
-    """Load auto mute groups dengan anti-corrupt"""
     if os.path.exists(AUTOMUTE_FILE):
         try:
             with open(AUTOMUTE_FILE, "r") as f:
@@ -280,7 +316,6 @@ def load_automute_groups():
     return set()
 
 def save_automute_groups(groups):
-    """Save auto mute groups dengan backup"""
     try:
         temp_file = f"{AUTOMUTE_FILE}.temp"
         with open(temp_file, "w") as f:
@@ -292,7 +327,6 @@ def save_automute_groups(groups):
         return False
 
 def verify_automute_persistence():
-    """Verifikasi auto mute groups setiap menit"""
     global AUTOMUTE_GROUPS
     if os.path.exists(AUTOMUTE_FILE):
         try:
@@ -337,7 +371,7 @@ def save_gban_list(gban_set):
         json.dump({"gban_users": list(gban_set)}, f, indent=4)
 
 # =============================================
-# AUTO MUTE FUNCTIONS
+# AUTO MUTE FUNCTIONS (NSFW 1 MINGGU + MENTION SPAM)
 # =============================================
 
 async def is_admin_group(client, chat_id, user_id):
@@ -380,6 +414,8 @@ async def mute_user_group(client, chat_id, user_id, duration=300):
         return False
 
 async def check_and_auto_mute(client, chat_id, user_id, user_name, message):
+    """Cek pesan dan mute otomatis - NSFW 1 MINGGU! MENTION SPAM 1 MENIT!"""
+    
     if chat_id not in AUTOMUTE_GROUPS:
         return False
     
@@ -390,58 +426,59 @@ async def check_and_auto_mute(client, chat_id, user_id, user_name, message):
         return False
     
     text = message.text or message.caption or ""
+    me = await client.get_me()
+    
+    # DETEKSI LANGSUNG!
     is_forbidden, content_type = ultra_detect(text)
     
-    if is_forbidden:
+    # CEK MENTION KHUSUS (mention ke user lain selain bot sendiri)
+    mention_pattern = r'@[a-zA-Z0-9_]{3,}'
+    mentions = re.findall(mention_pattern, text)
+    bot_username = me.username if me.username else ""
+    
+    is_mention_spam = False
+    if mentions:
+        for mention in mentions:
+            clean_mention = mention.replace('@', '')
+            if clean_mention.lower() != bot_username.lower():
+                is_mention_spam = True
+                break
+    
+    if is_forbidden or is_mention_spam:
+        # TENTUKAN DURASI BERDASARKAN JENIS
         if content_type == "nsfw":
-            duration = 3600
+            duration = 604800  # 1 minggu = 604800 detik
             reply = get_nsfw_reply()
+            mute_text = "1 MINGGU"
         elif content_type == "promo":
-            duration = 1800
+            duration = 1800  # 30 menit
             reply = get_promo_reply()
+            mute_text = "30 MENIT"
+        elif is_mention_spam:
+            duration = 60  # 1 menit untuk mention spam
+            reply = get_mention_spam_reply()
+            mute_text = "1 MENIT"
         else:
-            duration = 600
+            duration = 600  # 10 menit
             reply = get_brutal_reply()
+            mute_text = "10 MENIT"
         
+        # HAPUS PESAN SPAM/NSFW/PROMO/MENTION
+        try:
+            await message.delete()
+            print(f"🗑️ [DELETED] {user_name}: '{text[:50]}' -> {content_type if content_type else 'mention'}")
+        except Exception as e:
+            print(f"⚠️ Gagal hapus pesan: {e}")
+        
+        # MUTE USER
         if await mute_user_group(client, chat_id, user_id, duration):
             try:
-                await message.reply(f"{reply}\n\n🔇 MUTED {duration//60} MINUTES!")
+                await message.reply(f"{reply}\n\n🔇 MUTED {mute_text}!\n🗑️ PESAN TELAH DIHAPUS!")
             except:
                 pass
             return True
     
     return False
-
-# =============================================
-# COMMAND: REFRESH BOT (RESTART)
-# =============================================
-
-async def cmd_refresh(client, message):
-    """Refresh/restart bot dari Railway"""
-    global refresh_requested
-    
-    await message.reply(f"""
-{title_bar("REFRESH", "🔄")}
-
-💀 Bot akan di-restart dalam 3 detik!
-📌 Semua data sudah disimpan!
-🔥 THE TAMERS WILL RISE AGAIN!
-
-{BRAND} v{VERSION} 💀
-""")
-    
-    # Save semua data sebelum restart
-    save_automute_groups(AUTOMUTE_GROUPS)
-    save_superbrutal_groups(SUPERBRUTAL_GROUPS)
-    save_whitelist(WHITELIST_GROUPS)
-    save_blacklist(BLOCKED_GROUPS)
-    save_gban_list(GBAN_USERS)
-    save_settings(settings)
-    
-    await asyncio.sleep(3)
-    
-    # Exit dengan code spesial untuk restart
-    os._exit(99)
 
 # =============================================
 # COMMAND: PING, STATUS, INFO
@@ -519,7 +556,7 @@ async def cmd_list_superbrutal(client, message):
     await message.reply(f"{title_bar('SUPER BRUTAL LIST', '📋')}\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines))
 
 # =============================================
-# COMMAND: AUTO MUTE (DENGAN VERIFIKASI)
+# COMMAND: AUTO MUTE
 # =============================================
 async def cmd_automute_on(client, message):
     global AUTOMUTE_GROUPS
@@ -578,9 +615,10 @@ Status: ENABLED
 ✅ AUTO MUTE ACTIVATED!
 👑 Userbot adalah ADMIN dengan hak RESTRICT!
 
-🔞 NSFW → MUTE 1 JAM
+🔞 NSFW → MUTE 1 MINGGU
 📢 PROMO → MUTE 30 MENIT
 💀 SPAM → MUTE 10 MENIT
+👤 MENTION SPAM → MUTE 1 MENIT
 
 {BRAND} 💀
 """)
@@ -614,7 +652,6 @@ async def cmd_list_automute(client, message):
 # COMMAND: CHECK & FIX AUTO MUTE
 # =============================================
 async def cmd_check_automute(client, message):
-    """Cek status auto mute dan perbaiki jika perlu"""
     global AUTOMUTE_GROUPS
     
     reloaded = load_automute_groups()
@@ -644,7 +681,6 @@ async def cmd_check_automute(client, message):
 """)
 
 async def cmd_fix_automute(client, message):
-    """Force fix auto mute - restore dari backup atau reset"""
     global AUTOMUTE_GROUPS
     
     backups = [f for f in os.listdir('.') if f.startswith(f"{AUTOMUTE_FILE}.backup.")]
@@ -1074,6 +1110,30 @@ Status: ✅ NOT DETECTED
 """)
 
 # =============================================
+# COMMAND: REFRESH
+# =============================================
+async def cmd_refresh(client, message):
+    await message.reply(f"""
+{title_bar("REFRESH", "🔄")}
+
+💀 Bot akan di-restart dalam 3 detik!
+📌 Semua data sudah disimpan!
+🔥 THE TAMERS WILL RISE AGAIN!
+
+{BRAND} v{VERSION} 💀
+""")
+    
+    save_automute_groups(AUTOMUTE_GROUPS)
+    save_superbrutal_groups(SUPERBRUTAL_GROUPS)
+    save_whitelist(WHITELIST_GROUPS)
+    save_blacklist(BLOCKED_GROUPS)
+    save_gban_list(GBAN_USERS)
+    save_settings(settings)
+    
+    await asyncio.sleep(3)
+    os._exit(99)
+
+# =============================================
 # COMMAND: HELP
 # =============================================
 async def cmd_help(client, message):
@@ -1124,10 +1184,11 @@ async def cmd_help(client, message):
 ┃ {title_bar("🧪 TEST", "🧪")}
 ┃ └─ `.testdetect` - Test deteksi pesan
 
-{title_bar("🎯 DETECTION", "🎯")}
-┃ 🔞 NSFW → MUTE 1 JAM
-┃ 📢 PROMO → MUTE 30 MENIT
-┃ 💀 SPAM → MUTE 10 MENIT
+{title_bar("🎯 DETECTION RULES", "🎯")}
+┃ 🔞 NSFW (Pornografi/Dewasa) → MUTE 1 MINGGU
+┃ 📢 PROMO (Iklan/Jualan) → MUTE 30 MENIT
+┃ 💀 SPAM (Chat berulang) → MUTE 10 MENIT
+┃ 👤 MENTION SPAM (Tag orang lain) → MUTE 1 MENIT
 
 {BRAND} v{VERSION} 💀
 """
@@ -1351,7 +1412,7 @@ async def ultra_brutal_handler(client, message):
 # =============================================
 @app_flask.route("/", methods=["GET"])
 def index():
-    return "💀 THE TAMERS v10.0 - RUNNING 💀", 200
+    return "💀 THE TAMERS v11.0 - RUNNING 💀", 200
 
 @app_flask.route("/ping", methods=["GET"])
 def ping():
@@ -1375,12 +1436,13 @@ async def main():
     GBAN_USERS = load_gban_list()
     
     print("=" * 50)
-    print("💀 THE TAMERS v10.0 - PERMANENT AUTO MUTE + REFRESH 💀")
+    print("💀 THE TAMERS v11.0 - NSFW 1 WEEK + MENTION SPAM 💀")
     print("=" * 50)
     print(f"📋 GBAN: {len(GBAN_USERS)} victims")
     print(f"🔥 Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups")
     print(f"🔇 Auto Mute: {len(AUTOMUTE_GROUPS)} groups")
-    print("🔞 NSFW Detector: ULTRA SENSITIVE")
+    print("🔞 NSFW Detector: ULTRA SENSITIVE (1 WEEK MUTE!)")
+    print("👤 Mention Spam Detector: ACTIVE (1 MINUTE MUTE!)")
     print("🔄 Refresh Command: .refresh")
     print("")
     
@@ -1501,7 +1563,8 @@ async def main():
             await ultra_brutal_handler(c, m)
         
         print("📌 ALL COMMANDS LOADED!")
-        print("💀 NSFW DETECTOR: ULTRA SENSITIVE!")
+        print("💀 NSFW DETECTOR: ULTRA SENSITIVE (1 WEEK MUTE)!")
+        print("👤 MENTION SPAM DETECTOR: ACTIVE (1 MINUTE MUTE)!")
         print("🔄 REFRESH COMMAND: .refresh")
         print("🔇 AUTO MUTE PERMANENT (GAK BAKAL OFF SENDIRI)!")
         print("")
@@ -1512,7 +1575,6 @@ async def main():
         # Main loop dengan verifikasi periodic
         while True:
             await asyncio.sleep(60)
-            # Verifikasi auto mute groups setiap menit (biar gak off sendiri)
             verify_automute_persistence()
             print(f"[{datetime.now().strftime('%H:%M:%S')}] 💀 THE TAMERS ACTIVE! 💀")
             print(f"   🔇 Auto Mute: {len(AUTOMUTE_GROUPS)} groups")
