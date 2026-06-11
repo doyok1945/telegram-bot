@@ -1,6 +1,6 @@
 """
-THE TAMERS USERBOT v12.1 - FIXED SYNTAX EDITION
-GCast/UCast reply support | Download once media | Clean display
+THE TAMERS USERBOT v13.0 - PREMIUM CLEAN EDITION
+Tampilan keren tanpa garis kiri dan emoji dobel
 """
 
 import sys
@@ -64,7 +64,7 @@ SUPERBRUTAL_FILE = "superbrutal_groups.json"
 AUTOMUTE_FILE = "automute_groups.json"
 BOT_START_TIME = time.time()
 BRAND = "THE TAMERS"
-VERSION = "12.1.0"
+VERSION = "13.0.0"
 
 # =============================================
 # DATA GLOBAL
@@ -169,7 +169,7 @@ def ultra_detect(text: str) -> Tuple[bool, str]:
     return False, None
 
 # =============================================
-# REPLIES (DENGAN EMOJI TAPI GA DOBEL)
+# REPLIES
 # =============================================
 BRUTAL_REPLIES = ["💀 SPAM DETECTED", "💀 THE TAMERS DON'T TOLERATE SPAM"]
 NSFW_REPLIES = ["💀 KONTEN DEWASA TERDETEKSI - MUTE 1 MINGGU", "🔞 NSFW DETECTED - MUTED 1 WEEK"]
@@ -192,10 +192,7 @@ def get_mention_reply(): return random.choice(MENTION_REPLIES)
 def title_bar(text, icon="💀"):
     return f"{icon} {text}"
 
-def info_line(label, value):
-    return f"• {label}: {value}"
-
-def progress_bar(current, total, width=15):
+def progress_bar(current, total, width=20):
     if total == 0:
         return f"[{'░'*width}] 0%"
     persen = int(current / total * 100)
@@ -210,12 +207,23 @@ def get_uptime():
     mins = int((elapsed % 3600) // 60)
     secs = int(elapsed % 60)
     if days > 0:
-        return f"{days}d {hours}h"
+        return f"{days} days {hours} hours"
     elif hours > 0:
-        return f"{hours}h {mins}m"
+        return f"{hours} hours {mins} minutes"
     elif mins > 0:
-        return f"{mins}m {secs}s"
-    return f"{secs}s"
+        return f"{mins} minutes {secs} seconds"
+    return f"{secs} seconds"
+
+def get_system_stats():
+    """Ambil statistik sistem real-time"""
+    try:
+        import psutil
+        cpu = psutil.cpu_percent(interval=0.5)
+        ram = psutil.virtual_memory().percent
+        disk = psutil.disk_usage('/').percent
+        return cpu, ram, disk
+    except:
+        return 0, 0, 0
 
 # =============================================
 # MANAJEMEN DATA
@@ -426,32 +434,50 @@ async def check_and_auto_mute(client, chat_id, user_id, user_name, message):
     return False
 
 # =============================================
-# COMMAND: PING
+# COMMAND: PING (REAL-TIME + KEREN)
 # =============================================
 async def cmd_ping(client, message):
     start = time.time()
     await asyncio.sleep(0.05)
     ping = int((time.time() - start) * 1000)
+    me = await client.get_me()
     
     if ping < 50:
         status = "SUPER FAST 🚀"
+        grade = "🌟"
     elif ping < 150:
         status = "GOOD ✅"
+        grade = "⭐"
     elif ping < 300:
         status = "SLOW ⚠️"
+        grade = "💫"
     else:
         status = "DEAD 💀"
+        grade = "❌"
+    
+    cpu, ram, disk = get_system_stats()
     
     await message.reply(f"""
-💀 PONG
-• Response: {ping} ms
-• Status: {status}
-• Uptime: {get_uptime()}
-{BRAND}
+💀 𝐏𝐈𝐍𝐆 𝐑𝐄𝐒𝐔𝐋𝐓
+
+📡 𝐑𝐞𝐬𝐩𝐨𝐧𝐬𝐞: {ping} ms
+📊 𝐒𝐭𝐚𝐭𝐮𝐬: {status}
+🎯 𝐆𝐫𝐚𝐝𝐞: {grade}
+⏱️ 𝐔𝐩𝐭𝐢𝐦𝐞: {get_uptime()}
+
+🖥️ 𝐒𝐲𝐬𝐭𝐞𝐦 𝐑𝐞𝐚𝐥-𝐓𝐢𝐦𝐞
+• CPU Usage: {cpu}%
+• RAM Usage: {ram}%
+• Disk Usage: {disk}%
+
+👤 𝐎𝐰𝐧𝐞𝐫: {me.first_name}
+🆔 𝐈𝐃: {me.id}
+
+{BRAND} 𝐯{𝐕𝐄𝐑𝐒𝐈𝐎𝐍} 💀
 """)
 
 # =============================================
-# COMMAND: INFO (BISA AMBIL INFO USER LAIN)
+# COMMAND: INFO (KEREN)
 # =============================================
 async def cmd_info(client, message):
     target_user = None
@@ -476,15 +502,75 @@ async def cmd_info(client, message):
     first_name = target_user.first_name or "-"
     last_name = target_user.last_name or "-"
     username = f"@{target_user.username}" if target_user.username else "-"
-    is_premium = "Yes" if getattr(target_user, 'is_premium', False) else "No"
+    user_id = target_user.id
+    is_premium = "✅ Yes" if getattr(target_user, 'is_premium', False) else "❌ No"
+    is_bot = "✅ Yes" if target_user.is_bot else "❌ No"
+    
+    try:
+        dc_id = target_user.dc_id if hasattr(target_user, 'dc_id') else "Unknown"
+    except:
+        dc_id = "Unknown"
     
     await message.reply(f"""
-👤 USER INFO
-• Name: {first_name} {last_name}
-• Username: {username}
-• ID: {target_user.id}
-• Premium: {is_premium}
-{BRAND}
+👤 𝐔𝐒𝐄𝐑 𝐈𝐍𝐅𝐎𝐑𝐌𝐀𝐓𝐈𝐎𝐍
+
+📛 𝐍𝐚𝐦𝐞: {first_name} {last_name}
+📱 𝐔𝐬𝐞𝐫𝐧𝐚𝐦𝐞: {username}
+🆔 𝐔𝐬𝐞𝐫 𝐈𝐃: {user_id}
+💎 𝐏𝐫𝐞𝐦𝐢𝐮𝐦: {is_premium}
+🤖 𝐁𝐨𝐭: {is_bot}
+🌐 𝐃𝐚𝐭𝐚 𝐂𝐞𝐧𝐭𝐞𝐫: {dc_id}
+
+🔗 𝐏𝐫𝐨𝐟𝐢𝐥𝐞 𝐋𝐢𝐧𝐤: [Click Here](tg://user?id={user_id})
+
+{BRAND} 𝐯{𝐕𝐄𝐑𝐒𝐈𝐎𝐍} 💀
+""")
+
+# =============================================
+# COMMAND: STATUS (KEREN)
+# =============================================
+async def cmd_status(client, message):
+    me = await client.get_me()
+    
+    total_users = 0
+    total_groups = 0
+    total_channels = 0
+    
+    async for dialog in client.get_dialogs():
+        if dialog.chat.type == ChatType.PRIVATE and dialog.chat.id > 0:
+            total_users += 1
+        elif dialog.chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
+            total_groups += 1
+        elif dialog.chat.type == ChatType.CHANNEL:
+            total_channels += 1
+    
+    cpu, ram, disk = get_system_stats()
+    
+    await message.reply(f"""
+💀 𝐁𝐎𝐓 𝐒𝐓𝐀𝐓𝐔𝐒
+
+👑 𝐎𝐰𝐧𝐞𝐫: {me.first_name}
+🆔 𝐈𝐃: {me.id}
+⏱️ 𝐔𝐩𝐭𝐢𝐦𝐞: {get_uptime()}
+
+📊 𝐂𝐡𝐚𝐭 𝐒𝐭𝐚𝐭𝐢𝐬𝐭𝐢𝐜𝐬
+• Private Chats: {total_users}
+• Groups: {total_groups}
+• Channels: {total_channels}
+
+🎯 𝐅𝐞𝐚𝐭𝐮𝐫𝐞𝐬
+• GBAN Victims: {len(GBAN_USERS)}
+• Auto Mute: {len(AUTOMUTE_GROUPS)} groups
+• Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups
+• Auto Reply: {len(WHITELIST_GROUPS)} groups
+• Blacklist: {len(BLOCKED_GROUPS)} groups
+
+🖥️ 𝐒𝐲𝐬𝐭𝐞𝐦
+• CPU: {cpu}%
+• RAM: {ram}%
+• Disk: {disk}%
+
+{BRAND} 𝐯{𝐕𝐄𝐑𝐒𝐈𝐎𝐍} 💀
 """)
 
 # =============================================
@@ -506,9 +592,9 @@ async def cmd_download_once(client, message):
         file_path = await replied.download()
         
         if replied.photo:
-            await client.send_document(message.chat.id, file_path, caption=f"📸 Photo Once\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            await client.send_document(message.chat.id, file_path, caption=f"📸 Photo Once\n📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         elif replied.video:
-            await client.send_video(message.chat.id, file_path, caption=f"🎬 Video Once\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            await client.send_video(message.chat.id, file_path, caption=f"🎬 Video Once\n📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         os.remove(file_path)
         await status.delete()
@@ -516,33 +602,17 @@ async def cmd_download_once(client, message):
         await message.reply(f"❌ Gagal: {e}")
 
 # =============================================
-# COMMAND: STATUS
-# =============================================
-async def cmd_status(client, message):
-    me = await client.get_me()
-    await message.reply(f"""
-💀 STATUS
-• Owner: {me.first_name}
-• ID: {me.id}
-• Uptime: {get_uptime()}
-• GBAN: {len(GBAN_USERS)}
-• Auto Mute: {len(AUTOMUTE_GROUPS)}
-• Super Brutal: {len(SUPERBRUTAL_GROUPS)}
-{BRAND} v{VERSION}
-""")
-
-# =============================================
 # COMMAND: AFK & UNAFK
 # =============================================
 async def cmd_afk(client, message):
     global is_afk
     is_afk = True
-    await message.reply(f"😴 AFK\nAway! Type .unafk to back")
+    await message.reply(f"😴 𝐀𝐅𝐊 𝐌𝐎𝐃𝐄\n💀 Away! Type .unafk to back")
 
 async def cmd_unafk(client, message):
     global is_afk
     is_afk = False
-    await message.reply(f"✅ AFK\nBack!")
+    await message.reply(f"✅ 𝐀𝐅𝐊 𝐌𝐎𝐃𝐄\n👋 Back!")
 
 # =============================================
 # COMMAND: SUPER BRUTAL
@@ -557,7 +627,7 @@ async def cmd_superbrutal_on(client, message):
     chat_title = message.chat.title or "Grup"
     SUPERBRUTAL_GROUPS.add(chat_id)
     save_superbrutal_groups(SUPERBRUTAL_GROUPS)
-    await message.reply(f"🔥 SUPER BRUTAL\n{chat_title} - EVERY MESSAGE WILL BE REPLIED!")
+    await message.reply(f"🔥 𝐒𝐔𝐏𝐄𝐑 𝐁𝐑𝐔𝐓𝐀𝐋\n✅ {chat_title} - EVERY MESSAGE WILL BE REPLIED!")
 
 async def cmd_superbrutal_off(client, message):
     global SUPERBRUTAL_GROUPS
@@ -569,7 +639,7 @@ async def cmd_superbrutal_off(client, message):
     chat_title = message.chat.title or "Grup"
     SUPERBRUTAL_GROUPS.discard(chat_id)
     save_superbrutal_groups(SUPERBRUTAL_GROUPS)
-    await message.reply(f"❌ SUPER BRUTAL\nSuper Brutal DISABLED in {chat_title}")
+    await message.reply(f"❌ 𝐒𝐔𝐏𝐄𝐑 𝐁𝐑𝐔𝐓𝐀𝐋\nSuper Brutal DISABLED in {chat_title}")
 
 async def cmd_list_superbrutal(client, message):
     if not SUPERBRUTAL_GROUPS:
@@ -582,7 +652,7 @@ async def cmd_list_superbrutal(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"📋 SUPER BRUTAL LIST\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 𝐒𝐔𝐏𝐄𝐑 𝐁𝐑𝐔𝐓𝐀𝐋 𝐋𝐈𝐒𝐓\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines))
 
 # =============================================
 # COMMAND: AUTO MUTE
@@ -603,12 +673,12 @@ async def cmd_automute_on(client, message):
         
         if "administrator" not in status and "owner" not in status:
             await message.reply(f"""
-❌ AUTO MUTE
+❌ 𝐀𝐔𝐓𝐎 𝐌𝐔𝐓𝐄
 Group: {chat_title}
 Status: FAILED
 
-USERBOT HARUS JADI ADMIN DULU!
-Jadikan @{me.username} sebagai admin dengan hak "Restrict Members"
+💀 USERBOT HARUS JADI ADMIN DULU!
+📌 Jadikan @{me.username} sebagai admin dengan hak "Restrict Members"
 """)
             return
         
@@ -618,12 +688,12 @@ Jadikan @{me.username} sebagai admin dengan hak "Restrict Members"
         
         if not can_restrict:
             await message.reply(f"""
-⚠️ AUTO MUTE
+⚠️ 𝐀𝐔𝐓𝐎 𝐌𝐔𝐓𝐄
 Group: {chat_title}
 Status: LIMITED
 
-USERBOT ADMIN TAPI GAK PUNYA HAK RESTRICT MEMBERS!
-Centang "Restrict Members" pada admin @{me.username}
+💀 USERBOT ADMIN TAPI GAK PUNYA HAK RESTRICT MEMBERS!
+📌 Centang "Restrict Members" pada admin @{me.username}
 """)
             return
         
@@ -635,7 +705,7 @@ Centang "Restrict Members" pada admin @{me.username}
     save_automute_groups(AUTOMUTE_GROUPS)
     
     await message.reply(f"""
-🔇 AUTO MUTE
+🔇 𝐀𝐔𝐓𝐎 𝐌𝐔𝐓𝐄
 Group: {chat_title}
 Status: ENABLED
 
@@ -656,7 +726,7 @@ async def cmd_automute_off(client, message):
     chat_title = message.chat.title or "Grup"
     AUTOMUTE_GROUPS.discard(chat_id)
     save_automute_groups(AUTOMUTE_GROUPS)
-    await message.reply(f"❌ AUTO MUTE\nAuto Mute DISABLED in {chat_title}")
+    await message.reply(f"❌ 𝐀𝐔𝐓𝐎 𝐌𝐔𝐓𝐄\nAuto Mute DISABLED in {chat_title}")
 
 async def cmd_list_automute(client, message):
     if not AUTOMUTE_GROUPS:
@@ -669,7 +739,7 @@ async def cmd_list_automute(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"📋 AUTO MUTE LIST\nTotal: {len(AUTOMUTE_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 𝐀𝐔𝐓𝐎 𝐌𝐔𝐓𝐄 𝐋𝐈𝐒𝐓\nTotal: {len(AUTOMUTE_GROUPS)}\n" + "\n".join(lines))
 
 async def cmd_check_automute(client, message):
     global AUTOMUTE_GROUPS
@@ -685,7 +755,7 @@ async def cmd_check_automute(client, message):
             groups_list.append(f"• ID: {gid}")
     
     await message.reply(f"""
-🔍 AUTO MUTE STATUS
+🔍 𝐀𝐔𝐓𝐎 𝐌𝐔𝐓𝐄 𝐒𝐓𝐀𝐓𝐔𝐒
 • File: {'✅ OK' if os.path.exists(AUTOMUTE_FILE) else '❌ MISSING'}
 • Memory: {len(AUTOMUTE_GROUPS)} groups
 • File: {len(reloaded)} groups
@@ -704,8 +774,8 @@ async def cmd_gcast(client, message):
         pesan = message.text.split(maxsplit=1)[1]
     else:
         await message.reply(f"""
-❌ GCAST
-.gcast <pesan> atau reply ke pesan
+❌ 𝐆𝐂𝐀𝐒𝐓
+📌 .gcast <pesan> atau reply ke pesan
 """)
         return
     
@@ -732,7 +802,7 @@ async def cmd_gcast(client, message):
     
     status_msg = await client.send_message(
         message.chat.id,
-        f"📢 GCAST\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(0, total)}\nProcessing..."
+        f"📢 𝐆𝐂𝐀𝐒𝐓\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(0, total)}\nProcessing..."
     )
     
     berhasil, gagal, processed = 0, 0, 0
@@ -749,7 +819,7 @@ async def cmd_gcast(client, message):
             processed += 1
             if processed % 5 == 0 or processed == total:
                 await status_msg.edit(
-                    f"📢 GCAST\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal}\n{processed}/{total}"
+                    f"📢 𝐆𝐂𝐀𝐒𝐓\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal}\n{processed}/{total}"
                 )
             await asyncio.sleep(0.2)
     
@@ -757,7 +827,7 @@ async def cmd_gcast(client, message):
     success_rate = int(berhasil / total * 100) if total > 0 else 0
     
     await status_msg.edit(
-        f"✅ GCAST DONE\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | Rate: {success_rate}%"
+        f"✅ 𝐆𝐂𝐀𝐒𝐓 𝐃𝐎𝐍𝐄\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | Rate: {success_rate}%"
     )
 
 # =============================================
@@ -772,8 +842,8 @@ async def cmd_ucast_all(client, message):
         pesan = message.text.split(maxsplit=1)[1]
     else:
         await message.reply(f"""
-❌ UCAST
-.ucast_all <pesan> atau reply ke pesan
+❌ 𝐔𝐂𝐀𝐒𝐓
+📌 .ucast_all <pesan> atau reply ke pesan
 """)
         return
     
@@ -801,7 +871,7 @@ async def cmd_ucast_all(client, message):
     
     status_msg = await client.send_message(
         message.chat.id,
-        f"📨 UCAST\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(0, total)}\nProcessing..."
+        f"📨 𝐔𝐂𝐀𝐒𝐓\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(0, total)}\nProcessing..."
     )
     
     berhasil, gagal, diblokir, processed = 0, 0, 0, 0
@@ -820,7 +890,7 @@ async def cmd_ucast_all(client, message):
             processed += 1
             if processed % 5 == 0 or processed == total:
                 await status_msg.edit(
-                    f"📨 UCAST\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir}\n{processed}/{total}"
+                    f"📨 𝐔𝐂𝐀𝐒𝐓\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir}\n{processed}/{total}"
                 )
             await asyncio.sleep(0.3)
     
@@ -828,7 +898,7 @@ async def cmd_ucast_all(client, message):
     success_rate = int(berhasil / total * 100) if total > 0 else 0
     
     await status_msg.edit(
-        f"✅ UCAST DONE\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir} | Rate: {success_rate}%"
+        f"✅ 𝐔𝐂𝐀𝐒𝐓 𝐃𝐎𝐍𝐄\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir} | Rate: {success_rate}%"
     )
 
 # =============================================
@@ -836,7 +906,7 @@ async def cmd_ucast_all(client, message):
 # =============================================
 async def cmd_spam(client, message):
     if len(message.command) < 3 and not message.reply_to_message:
-        await message.reply(f"❌ SPAM\n.spam <jumlah> <pesan> atau reply ke pesan")
+        await message.reply(f"❌ 𝐒𝐏𝐀𝐌\n📌 .spam <jumlah> <pesan> atau reply ke pesan")
         return
     
     try:
@@ -854,7 +924,7 @@ async def cmd_spam(client, message):
         await message.reply("❌ Teks kosong!")
         return
     
-    status = await message.reply(f"🔄 SPAM\nSpamming {count} messages...\n{progress_bar(0, count)}")
+    status = await message.reply(f"🔄 𝐒𝐏𝐀𝐌\nSpamming {count} messages...\n{progress_bar(0, count)}")
     await message.delete()
     
     for i in range(count):
@@ -862,9 +932,9 @@ async def cmd_spam(client, message):
         await asyncio.sleep(0.1)
         
         if (i + 1) % 10 == 0 or (i + 1) == count:
-            await status.edit(f"🔄 SPAM\nSpamming {count} messages...\n{progress_bar(i + 1, count)}")
+            await status.edit(f"🔄 𝐒𝐏𝐀𝐌\nSpamming {count} messages...\n{progress_bar(i + 1, count)}")
     
-    await status.edit(f"✅ SPAM DONE\nSent {count} messages!")
+    await status.edit(f"✅ 𝐒𝐏𝐀𝐌 𝐃𝐎𝐍𝐄\nSent {count} messages!")
 
 # =============================================
 # COMMAND: GBAN
@@ -931,9 +1001,9 @@ async def cmd_gban(client, message):
         await message.reply(f"⚠️ {target_name} udah kena GBAN!")
         return
     
-    status_msg = await message.reply(f"💀 GBAN\nTarget: {target_name}\nProcessing...")
+    status_msg = await message.reply(f"💀 𝐆𝐁𝐀𝐍\nTarget: {target_name}\nProcessing...")
     result = await nuclear_global_ban(client, target_id)
-    await status_msg.edit(f"✅ GBAN DONE\nTarget: {target_name}\nReport: {'✅' if result['report'] else '⚠️'}\nBlocks: {result['blocks']}")
+    await status_msg.edit(f"✅ 𝐆𝐁𝐀𝐍 𝐃𝐎𝐍𝐄\nTarget: {target_name}\nReport: {'✅' if result['report'] else '⚠️'}\nBlocks: {result['blocks']}\n💀 TARGET TIDAK TAHU!")
     
     try:
         await message.delete()
@@ -977,7 +1047,7 @@ async def cmd_ungban(client, message):
         await client.unblock_user(target_id)
     except:
         pass
-    await message.reply(f"✅ UNGBAN\nUser {target_name} removed from GBAN!")
+    await message.reply(f"✅ 𝐔𝐍𝐆𝐁𝐀𝐍\nUser {target_name} removed from GBAN!")
 
 async def cmd_listgban(client, message):
     if not GBAN_USERS:
@@ -990,7 +1060,7 @@ async def cmd_listgban(client, message):
             user_list.append(f"• {user.first_name} (@{user.username})")
         except:
             user_list.append(f"• ID: {uid}")
-    await message.reply(f"📋 GBAN LIST\nTotal: {len(GBAN_USERS)}\n" + "\n".join(user_list))
+    await message.reply(f"📋 𝐆𝐁𝐀𝐍 𝐋𝐈𝐒𝐓\nTotal: {len(GBAN_USERS)}\n" + "\n".join(user_list))
 
 # =============================================
 # COMMAND: WHITELIST & BLACKLIST
@@ -1003,7 +1073,7 @@ async def cmd_grup_on(client, message):
     cid, title = message.chat.id, message.chat.title or "Grup"
     WHITELIST_GROUPS.add(cid)
     save_whitelist(WHITELIST_GROUPS)
-    await message.reply(f"✅ AUTO REPLY\nAuto reply ENABLED in {title}")
+    await message.reply(f"✅ 𝐀𝐔𝐓𝐎 𝐑𝐄𝐏𝐋𝐘\nAuto reply ENABLED in {title}")
 
 async def cmd_grup_off(client, message):
     global WHITELIST_GROUPS
@@ -1013,7 +1083,7 @@ async def cmd_grup_off(client, message):
     cid, title = message.chat.id, message.chat.title or "Grup"
     WHITELIST_GROUPS.discard(cid)
     save_whitelist(WHITELIST_GROUPS)
-    await message.reply(f"❌ AUTO REPLY\nAuto reply DISABLED in {title}")
+    await message.reply(f"❌ 𝐀𝐔𝐓𝐎 𝐑𝐄𝐏𝐋𝐘\nAuto reply DISABLED in {title}")
 
 async def cmd_list_whitelist(client, message):
     if not WHITELIST_GROUPS:
@@ -1026,7 +1096,7 @@ async def cmd_list_whitelist(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"📋 AUTO REPLY GROUPS\nTotal: {len(WHITELIST_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 𝐀𝐔𝐓𝐎 𝐑𝐄𝐏𝐋𝐘 𝐆𝐑𝐎𝐔𝐏𝐒\nTotal: {len(WHITELIST_GROUPS)}\n" + "\n".join(lines))
 
 async def cmd_addbl(client, message):
     if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -1038,7 +1108,7 @@ async def cmd_addbl(client, message):
         return
     BLOCKED_GROUPS.add(gid)
     save_blacklist(BLOCKED_GROUPS)
-    await message.reply(f"🚫 BLACKLISTED\n{title} added to blacklist!")
+    await message.reply(f"🚫 𝐁𝐋𝐀𝐂𝐊𝐋𝐈𝐒𝐓𝐄𝐃\n{title} added to blacklist!")
 
 async def cmd_rmbl(client, message):
     if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -1050,7 +1120,7 @@ async def cmd_rmbl(client, message):
         return
     BLOCKED_GROUPS.remove(gid)
     save_blacklist(BLOCKED_GROUPS)
-    await message.reply(f"✅ REMOVED\n{title} removed from blacklist!")
+    await message.reply(f"✅ 𝐑𝐄𝐌𝐎𝐕𝐄𝐃\n{title} removed from blacklist!")
 
 async def cmd_listbl(client, message):
     if not BLOCKED_GROUPS:
@@ -1063,7 +1133,7 @@ async def cmd_listbl(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"📋 BLACKLIST\nTotal: {len(BLOCKED_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 𝐁𝐋𝐀𝐂𝐊𝐋𝐈𝐒𝐓\nTotal: {len(BLOCKED_GROUPS)}\n" + "\n".join(lines))
 
 # =============================================
 # COMMAND: TEST DETEKSI
@@ -1079,26 +1149,26 @@ async def cmd_test_detect(client, message):
     
     if is_forbidden:
         await message.reply(f"""
-🔍 TEST RESULT
+🔍 𝐓𝐄𝐒𝐓 𝐑𝐄𝐒𝐔𝐋𝐓
 Original: {text[:100]}
 Normalized: {normalized[:100]}
-Status: DETECTED!
+Status: 🚫 DETECTED
 Type: {content_type.upper()}
 Action: WILL BE MUTED!
 """)
     else:
         await message.reply(f"""
-🔍 TEST RESULT
+🔍 𝐓𝐄𝐒𝐓 𝐑𝐄𝐒𝐔𝐋𝐓
 Original: {text[:100]}
 Normalized: {normalized[:100]}
-Status: NOT DETECTED
+Status: ✅ NOT DETECTED
 """)
 
 # =============================================
 # COMMAND: REFRESH BOT
 # =============================================
 async def cmd_refresh(client, message):
-    await message.reply(f"🔄 REFRESH\nBot akan di-restart dalam 3 detik!")
+    await message.reply(f"🔄 𝐑𝐄𝐅𝐑𝐄𝐒𝐇\n💀 Bot akan di-restart dalam 3 detik!")
     
     save_automute_groups(AUTOMUTE_GROUPS)
     save_superbrutal_groups(SUPERBRUTAL_GROUPS)
@@ -1116,71 +1186,82 @@ async def cmd_refresh(client, message):
 async def cmd_botstatus(client, message):
     me = await client.get_me()
     await message.reply(f"""
-💀 BOT STATUS
+💀 𝐁𝐎𝐓 𝐒𝐓𝐀𝐓𝐔𝐒
 • Bot: @{me.username}
 • Uptime: {get_uptime()}
 • Handler: ACTIVE
 
+📊 𝐅𝐞𝐚𝐭𝐮𝐫𝐞𝐬
 • Auto Mute: {len(AUTOMUTE_GROUPS)} groups
 • Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups
 • Auto Reply: {len(WHITELIST_GROUPS)} groups
 • Blacklist: {len(BLOCKED_GROUPS)} groups
+• GBAN Victims: {len(GBAN_USERS)}
 """)
 
 # =============================================
-# COMMAND: HELP (SIMPEL)
+# COMMAND: HELP (SIMPEL TAPI KEREN)
 # =============================================
 async def cmd_help(client, message):
     help_text = f"""
-💀 THE TAMERS COMMANDS
+💀 𝐓𝐇𝐄 𝐓𝐀𝐌𝐄𝐑𝐒 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒
 
-⚡ BASIC
-• .ping - Cek kecepatan
-• .status - Status bot
+⚡ 𝐁𝐀𝐒𝐈𝐂
+• .ping - Cek kecepatan & sistem
+• .status - Status bot lengkap
 • .info - Info akun sendiri
 • .info @user - Info user lain
+• .info (reply) - Info user yang di-reply
+• .botstatus - Status bot realtime
 • .afk / .unafk - Mode AFK
 • .refresh - Restart bot
 
-🔇 AUTO MUTE
-• .automute on/off - Auto mute di grup
+🔇 𝐀𝐔𝐓𝐎 𝐌𝐔𝐓𝐄
+• .automute on - Aktifkan auto mute di grup
+• .automute off - Nonaktifkan auto mute
 • .listautomute - Lihat grup auto mute
-• .checkautomute - Cek status
-• .testdetect - Test deteksi
+• .checkautomute - Cek status auto mute
+• .testdetect - Test deteksi pesan
 
-🔥 SUPER BRUTAL
-• .superbrutal on/off - Balas semua pesan
-• .listsuperbrutal - Lihat grup
+🔥 𝐒𝐔𝐏𝐄𝐑 𝐁𝐑𝐔𝐓𝐀𝐋
+• .superbrutal on - Balas SEMUA pesan di grup
+• .superbrutal off - Nonaktifkan super brutal
+• .listsuperbrutal - Lihat grup super brutal
 
-🤖 AUTO REPLY
-• .grup on/off - Auto reply grup
-• .private on/off - Auto reply private
-• .listgrup - Lihat grup
+🤖 𝐀𝐔𝐓𝐎 𝐑𝐄𝐏𝐋𝐘
+• .grup on - Auto reply di grup
+• .grup off - Nonaktifkan auto reply grup
+• .private on - Auto reply private chat
+• .private off - Nonaktifkan private reply
+• .listgrup - Lihat grup auto reply
 
-🚫 BLACKLIST
-• .addbl / .rmbl - Blacklist grup
-• .listbl - Lihat blacklist
+🚫 𝐁𝐋𝐀𝐂𝐊𝐋𝐈𝐒𝐓
+• .addbl - Blacklist grup ini
+• .rmbl - Hapus grup dari blacklist
+• .listbl - Lihat daftar blacklist
 
-📢 BROADCAST
-• .gcast <pesan> - Broadcast ke grup
-• .ucast_all <pesan> - Broadcast ke private
-• .spam <jml> <pesan> - Spam
+📢 𝐁𝐑𝐎𝐀𝐃𝐂𝐀𝐒𝐓
+• .gcast <pesan> - Broadcast ke semua grup
+• .gcast (reply) - Broadcast pesan yang di-reply
+• .ucast_all <pesan> - Broadcast ke semua private chat
+• .ucast_all (reply) - Broadcast pesan yang di-reply
+• .spam <jml> <pesan> - Spam ke grup
 
-💀 GBAN
-• .gban @user - GBAN user
-• .ungban @user - Hapus GBAN
-• .listgban - Lihat korban
+💀 𝐆𝐁𝐀𝐍
+• .gban @user/reply - GBAN user (silent)
+• .ungban @user/reply - Hapus dari GBAN
+• .listgban - Lihat korban GBAN
 
-📸 MEDIA
+📸 𝐌𝐄𝐃𝐈𝐀
 • .downloadonce (reply) - Download foto/video sekali lihat
 
-🎯 DETECTION
-• NSFW → MUTE 1 MINGGU
-• PROMO → MUTE 30 MENIT
-• SPAM → MUTE 10 MENIT
-• MENTION SPAM → MUTE 1 MENIT
+🎯 𝐃𝐄𝐓𝐄𝐂𝐓𝐈𝐎𝐍 𝐑𝐔𝐋𝐄𝐒
+• 🔞 NSFW → MUTE 1 MINGGU
+• 📢 PROMO → MUTE 30 MENIT
+• 💀 SPAM → MUTE 10 MENIT
+• 👤 MENTION SPAM → MUTE 1 MENIT
 
-{BRAND} v{VERSION}
+{BRAND} 𝐯{𝐕𝐄𝐑𝐒𝐈𝐎𝐍} 💀
 """
     await message.reply(help_text)
 
@@ -1222,7 +1303,7 @@ async def cmd_approve(client, message):
         await client.unblock_user(target_id)
     except:
         pass
-    await message.reply(f"✅ APPROVED\nUser {target_name} approved!")
+    await message.reply(f"✅ 𝐀𝐏𝐏𝐑𝐎𝐕𝐄𝐃\nUser {target_name} approved!")
 
 async def cmd_reject(client, message):
     global afk_pending_users, afk_approved_users
@@ -1260,7 +1341,7 @@ async def cmd_reject(client, message):
     
     afk_pending_users.pop(target_id, None)
     afk_approved_users.discard(target_id)
-    await message.reply(f"🚫 REJECTED\nUser {target_name} blocked!")
+    await message.reply(f"🚫 𝐑𝐄𝐉𝐄𝐂𝐓𝐄𝐃\nUser {target_name} blocked!")
 
 async def cmd_afklist(client, message):
     if not afk_pending_users:
@@ -1276,7 +1357,7 @@ async def cmd_afklist(client, message):
             lines.append(f"{warned} {name} - {data['count']}/5")
         except:
             lines.append(f"○ User {uid}")
-    await message.reply(f"📋 AFK PENDING\n" + "\n".join(lines))
+    await message.reply(f"📋 𝐀𝐅𝐊 𝐏𝐄𝐍𝐃𝐈𝐍𝐆\n" + "\n".join(lines))
 
 async def cmd_unblock_user(client, message):
     target_id = None
@@ -1308,7 +1389,7 @@ async def cmd_unblock_user(client, message):
     
     try:
         await client.unblock_user(target_id)
-        await message.reply(f"✅ UNBLOCKED\nUser {target_name} unblocked!")
+        await message.reply(f"✅ 𝐔𝐍𝐁𝐋𝐎𝐂𝐊𝐄𝐃\nUser {target_name} unblocked!")
         afk_pending_users.pop(target_id, None)
         afk_approved_users.discard(target_id)
     except Exception as e:
@@ -1401,7 +1482,7 @@ async def ultra_brutal_handler(client, message):
 # =============================================
 @app_flask.route("/", methods=["GET"])
 def index():
-    return "THE TAMERS v12.1 - RUNNING", 200
+    return "THE TAMERS v13.0 - RUNNING", 200
 
 @app_flask.route("/ping", methods=["GET"])
 def ping():
@@ -1428,9 +1509,9 @@ async def main():
     settings = load_settings()
     GBAN_USERS = load_gban_list()
     
-    print("=" * 50)
-    print("💀 THE TAMERS v12.1 - CLEAN EDITION 💀")
-    print("=" * 50)
+    print("=" * 60)
+    print("💀 THE TAMERS v13.0 - PREMIUM CLEAN EDITION 💀")
+    print("=" * 60)
     print(f"GBAN: {len(GBAN_USERS)} victims")
     print(f"Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups")
     print(f"Auto Mute: {len(AUTOMUTE_GROUPS)} groups")
