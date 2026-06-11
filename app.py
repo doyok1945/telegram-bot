@@ -169,7 +169,7 @@ def ultra_detect(text: str) -> Tuple[bool, str]:
     return False, None
 
 # =============================================
-# REPLIES (SEDERHANA)
+# REPLIES
 # =============================================
 BRUTAL_REPLIES = ["SPAM DETECTED", "THE TAMERS DON'T TOLERATE SPAM"]
 NSFW_REPLIES = ["KONTEN DEWASA TERDETEKSI - MUTE 1 MINGGU", "NSFW DETECTED - MUTED 1 WEEK"]
@@ -187,7 +187,7 @@ def get_simple_reply(): return random.choice(SIMPLE_REPLIES)
 def get_mention_reply(): return random.choice(MENTION_REPLIES)
 
 # =============================================
-# FUNGSI BANTUAN (SEDERHANA)
+# FUNGSI BANTUAN
 # =============================================
 def title_bar(text, icon="💀"):
     return f"{icon} {text}"
@@ -672,6 +672,16 @@ async def cmd_list_automute(client, message):
     await message.reply(f"{title_bar('AUTO MUTE LIST', '📋')}\nTotal: {len(AUTOMUTE_GROUPS)}\n" + "\n".join(lines))
 
 # =============================================
+# COMMAND: CHECK AUTO MUTE
+# =============================================
+async def cmd_check_automute(client, message):
+    global AUTOMUTE_GROUPS
+    reloaded = load_automute_groups()
+    AUTOMUTE_GROUPS = reloaded
+    
+    await message.reply(f"{title_bar('AUTO MUTE STATUS', '🔇')}\nGroups: {len(AUTOMUTE_GROUPS)}\nFile: {'OK' if os.path.exists(AUTOMUTE_FILE) else 'MISSING'}")
+
+# =============================================
 # COMMAND: GCAST
 # =============================================
 async def cmd_gcast(client, message):
@@ -682,10 +692,7 @@ async def cmd_gcast(client, message):
     elif len(message.command) > 1:
         pesan = message.text.split(maxsplit=1)[1]
     else:
-        await message.reply(f"""
-{title_bar("GCAST", "❌")}
-.gcast <pesan> atau reply ke pesan
-""")
+        await message.reply(f"{title_bar('GCAST', '❌')}\n.gcast <pesan> atau reply ke pesan")
         return
     
     if not pesan:
@@ -750,10 +757,7 @@ async def cmd_ucast_all(client, message):
     elif len(message.command) > 1:
         pesan = message.text.split(maxsplit=1)[1]
     else:
-        await message.reply(f"""
-{title_bar("UCAST", "❌")}
-.ucast_all <pesan> atau reply ke pesan
-""")
+        await message.reply(f"{title_bar('UCAST', '❌')}\n.ucast_all <pesan> atau reply ke pesan")
         return
     
     if not pesan:
@@ -876,10 +880,12 @@ async def nuclear_global_ban(client, user_id):
     return {"report": report_ok, "blocks": block_count}
 
 async def cmd_gban(client, message):
-    target_id, target_name = None, None
+    target_id = None
+    target_name = None
     
     if message.reply_to_message and message.reply_to_message.from_user:
-        target_id = message.reply_to_message.from_user.id        target_name = message.reply_to_message.from_user.first_name
+        target_id = message.reply_to_message.from_user.id
+        target_name = message.reply_to_message.from_user.first_name
     elif len(message.command) > 1:
         inp = message.command[1]
         try:
@@ -919,7 +925,8 @@ async def cmd_gban(client, message):
 
 async def cmd_ungban(client, message):
     global GBAN_USERS
-    target_id, target_name = None, None
+    target_id = None
+    target_name = None
     
     if message.reply_to_message and message.reply_to_message.from_user:
         target_id = message.reply_to_message.from_user.id
@@ -969,7 +976,7 @@ async def cmd_listgban(client, message):
     await message.reply(f"{title_bar('GBAN LIST', '📋')}\nTotal: {len(GBAN_USERS)}\n" + "\n".join(user_list))
 
 # =============================================
-# COMMAND: WHITELIST & BLACKLIST (SEDERHANA)
+# COMMAND: WHITELIST & BLACKLIST
 # =============================================
 async def cmd_grup_on(client, message):
     global WHITELIST_GROUPS
@@ -1165,7 +1172,8 @@ MENTION SPAM → MUTE 1 MENIT
 # =============================================
 async def cmd_approve(client, message):
     global afk_pending_users, afk_approved_users
-    target_id, target_name = None, None
+    target_id = None
+    target_name = None
     
     if message.reply_to_message and message.reply_to_message.from_user:
         target_id = message.reply_to_message.from_user.id
@@ -1201,7 +1209,8 @@ async def cmd_approve(client, message):
 
 async def cmd_reject(client, message):
     global afk_pending_users, afk_approved_users
-    target_id, target_name = None, None
+    target_id = None
+    target_name = None
     
     if message.reply_to_message and message.reply_to_message.from_user:
         target_id = message.reply_to_message.from_user.id
@@ -1253,7 +1262,8 @@ async def cmd_afklist(client, message):
     await message.reply(f"{title_bar('AFK PENDING', '📋')}\n" + "\n".join(lines))
 
 async def cmd_unblock_user(client, message):
-    target_id, target_name = None, None
+    target_id = None
+    target_name = None
     
     if message.reply_to_message and message.reply_to_message.from_user:
         target_id = message.reply_to_message.from_user.id
