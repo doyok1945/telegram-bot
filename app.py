@@ -1,5 +1,5 @@
 """
-THE TAMERS USERBOT v12.1 - CLEAN & SIMPLE EDITION
+THE TAMERS USERBOT v12.1 - FIXED SYNTAX EDITION
 GCast/UCast reply support | Download once media | Clean display
 """
 
@@ -169,15 +169,15 @@ def ultra_detect(text: str) -> Tuple[bool, str]:
     return False, None
 
 # =============================================
-# REPLIES
+# REPLIES (DENGAN EMOJI TAPI GA DOBEL)
 # =============================================
-BRUTAL_REPLIES = ["SPAM DETECTED", "THE TAMERS DON'T TOLERATE SPAM"]
-NSFW_REPLIES = ["KONTEN DEWASA TERDETEKSI - MUTE 1 MINGGU", "NSFW DETECTED - MUTED 1 WEEK"]
-PROMO_REPLIES = ["PROMOSI DILARANG - MUTE 30 MENIT"]
-MENTION_REPLIES_BRUTAL = ["MENTION SPAM DETECTED - MUTE 1 MENIT"]
-SIMPLE_REPLIES = ["hmm", "ya", "Y", "iyaaa", "oke"]
-MENTION_REPLIES = ["hmm?", "ya?", "iyeee?", "ada apa?"]
-AFK_REPLY = "THE TAMERS lagi AFK, sabar ya"
+BRUTAL_REPLIES = ["💀 SPAM DETECTED", "💀 THE TAMERS DON'T TOLERATE SPAM"]
+NSFW_REPLIES = ["💀 KONTEN DEWASA TERDETEKSI - MUTE 1 MINGGU", "🔞 NSFW DETECTED - MUTED 1 WEEK"]
+PROMO_REPLIES = ["💀 PROMOSI DILARANG - MUTE 30 MENIT"]
+MENTION_REPLIES_BRUTAL = ["💀 MENTION SPAM DETECTED - MUTE 1 MENIT"]
+SIMPLE_REPLIES = ["💀 hmm", "💀 ya", "💀 Y", "💀 iyaaa", "💀 oke"]
+MENTION_REPLIES = ["💀 hmm?", "💀 ya?", "💀 iyeee?", "💀 ada apa?"]
+AFK_REPLY = "💀 THE TAMERS lagi AFK, sabar ya"
 
 def get_brutal_reply(): return random.choice(BRUTAL_REPLIES)
 def get_nsfw_reply(): return random.choice(NSFW_REPLIES)
@@ -187,7 +187,7 @@ def get_simple_reply(): return random.choice(SIMPLE_REPLIES)
 def get_mention_reply(): return random.choice(MENTION_REPLIES)
 
 # =============================================
-# FUNGSI BANTUAN
+# FUNGSI BANTUAN (TANPA GARIS KIRI)
 # =============================================
 def title_bar(text, icon="💀"):
     return f"{icon} {text}"
@@ -434,19 +434,19 @@ async def cmd_ping(client, message):
     ping = int((time.time() - start) * 1000)
     
     if ping < 50:
-        status = "SUPER FAST"
+        status = "SUPER FAST 🚀"
     elif ping < 150:
-        status = "GOOD"
+        status = "GOOD ✅"
     elif ping < 300:
-        status = "SLOW"
+        status = "SLOW ⚠️"
     else:
-        status = "DEAD"
+        status = "DEAD 💀"
     
     await message.reply(f"""
-{title_bar("PONG", "💀")}
-Response: {ping} ms
-Status: {status}
-Uptime: {get_uptime()}
+💀 PONG
+• Response: {ping} ms
+• Status: {status}
+• Uptime: {get_uptime()}
 {BRAND}
 """)
 
@@ -479,11 +479,11 @@ async def cmd_info(client, message):
     is_premium = "Yes" if getattr(target_user, 'is_premium', False) else "No"
     
     await message.reply(f"""
-{title_bar("USER INFO", "👤")}
-Name: {first_name} {last_name}
-Username: {username}
-ID: {target_user.id}
-Premium: {is_premium}
+👤 USER INFO
+• Name: {first_name} {last_name}
+• Username: {username}
+• ID: {target_user.id}
+• Premium: {is_premium}
 {BRAND}
 """)
 
@@ -492,28 +492,28 @@ Premium: {is_premium}
 # =============================================
 async def cmd_download_once(client, message):
     if not message.reply_to_message:
-        await message.reply("Reply ke pesan foto/video sekali lihat")
+        await message.reply("📸 Reply ke pesan foto/video sekali lihat")
         return
     
     replied = message.reply_to_message
     
     if not replied.photo and not replied.video:
-        await message.reply("Tidak ada foto/video yang bisa di-download")
+        await message.reply("❌ Tidak ada foto/video yang bisa di-download")
         return
     
     try:
-        status = await message.reply("Downloading...")
+        status = await message.reply("📥 Downloading...")
         file_path = await replied.download()
         
         if replied.photo:
-            await client.send_document(message.chat.id, file_path, caption=f"Photo Once\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            await client.send_document(message.chat.id, file_path, caption=f"📸 Photo Once\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         elif replied.video:
-            await client.send_video(message.chat.id, file_path, caption=f"Video Once\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            await client.send_video(message.chat.id, file_path, caption=f"🎬 Video Once\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         os.remove(file_path)
         await status.delete()
     except Exception as e:
-        await message.reply(f"Gagal: {e}")
+        await message.reply(f"❌ Gagal: {e}")
 
 # =============================================
 # COMMAND: STATUS
@@ -521,13 +521,13 @@ async def cmd_download_once(client, message):
 async def cmd_status(client, message):
     me = await client.get_me()
     await message.reply(f"""
-{title_bar("STATUS", "💀")}
-Owner: {me.first_name}
-ID: {me.id}
-Uptime: {get_uptime()}
-GBAN: {len(GBAN_USERS)}
-Auto Mute: {len(AUTOMUTE_GROUPS)}
-Super Brutal: {len(SUPERBRUTAL_GROUPS)}
+💀 STATUS
+• Owner: {me.first_name}
+• ID: {me.id}
+• Uptime: {get_uptime()}
+• GBAN: {len(GBAN_USERS)}
+• Auto Mute: {len(AUTOMUTE_GROUPS)}
+• Super Brutal: {len(SUPERBRUTAL_GROUPS)}
 {BRAND} v{VERSION}
 """)
 
@@ -537,12 +537,12 @@ Super Brutal: {len(SUPERBRUTAL_GROUPS)}
 async def cmd_afk(client, message):
     global is_afk
     is_afk = True
-    await message.reply(f"{title_bar('AFK', '😴')}\nAway! Type .unafk to back")
+    await message.reply(f"😴 AFK\nAway! Type .unafk to back")
 
 async def cmd_unafk(client, message):
     global is_afk
     is_afk = False
-    await message.reply(f"{title_bar('AFK', '✅')}\nBack!")
+    await message.reply(f"✅ AFK\nBack!")
 
 # =============================================
 # COMMAND: SUPER BRUTAL
@@ -557,7 +557,7 @@ async def cmd_superbrutal_on(client, message):
     chat_title = message.chat.title or "Grup"
     SUPERBRUTAL_GROUPS.add(chat_id)
     save_superbrutal_groups(SUPERBRUTAL_GROUPS)
-    await message.reply(f"{title_bar('SUPER BRUTAL', '🔥')}\n{chat_title} - EVERY MESSAGE WILL BE REPLIED!")
+    await message.reply(f"🔥 SUPER BRUTAL\n{chat_title} - EVERY MESSAGE WILL BE REPLIED!")
 
 async def cmd_superbrutal_off(client, message):
     global SUPERBRUTAL_GROUPS
@@ -569,11 +569,11 @@ async def cmd_superbrutal_off(client, message):
     chat_title = message.chat.title or "Grup"
     SUPERBRUTAL_GROUPS.discard(chat_id)
     save_superbrutal_groups(SUPERBRUTAL_GROUPS)
-    await message.reply(f"{title_bar('SUPER BRUTAL', '❌')}\nSuper Brutal DISABLED in {chat_title}")
+    await message.reply(f"❌ SUPER BRUTAL\nSuper Brutal DISABLED in {chat_title}")
 
 async def cmd_list_superbrutal(client, message):
     if not SUPERBRUTAL_GROUPS:
-        await message.reply("No active super brutal groups")
+        await message.reply("📋 No active super brutal groups")
         return
     lines = []
     for gid in list(SUPERBRUTAL_GROUPS)[:30]:
@@ -582,7 +582,7 @@ async def cmd_list_superbrutal(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"{title_bar('SUPER BRUTAL LIST', '📋')}\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 SUPER BRUTAL LIST\nTotal: {len(SUPERBRUTAL_GROUPS)}\n" + "\n".join(lines))
 
 # =============================================
 # COMMAND: AUTO MUTE
@@ -603,7 +603,7 @@ async def cmd_automute_on(client, message):
         
         if "administrator" not in status and "owner" not in status:
             await message.reply(f"""
-{title_bar("AUTO MUTE", "❌")}
+❌ AUTO MUTE
 Group: {chat_title}
 Status: FAILED
 
@@ -618,7 +618,7 @@ Jadikan @{me.username} sebagai admin dengan hak "Restrict Members"
         
         if not can_restrict:
             await message.reply(f"""
-{title_bar("AUTO MUTE", "⚠️")}
+⚠️ AUTO MUTE
 Group: {chat_title}
 Status: LIMITED
 
@@ -635,15 +635,15 @@ Centang "Restrict Members" pada admin @{me.username}
     save_automute_groups(AUTOMUTE_GROUPS)
     
     await message.reply(f"""
-{title_bar("AUTO MUTE", "🔇")}
+🔇 AUTO MUTE
 Group: {chat_title}
 Status: ENABLED
 
 ✅ AUTO MUTE ACTIVATED!
-NSFW → MUTE 1 MINGGU
-PROMO → MUTE 30 MENIT
-SPAM → MUTE 10 MENIT
-MENTION SPAM → MUTE 1 MENIT
+• NSFW → MUTE 1 MINGGU
+• PROMO → MUTE 30 MENIT
+• SPAM → MUTE 10 MENIT
+• MENTION SPAM → MUTE 1 MENIT
 """)
 
 async def cmd_automute_off(client, message):
@@ -656,11 +656,11 @@ async def cmd_automute_off(client, message):
     chat_title = message.chat.title or "Grup"
     AUTOMUTE_GROUPS.discard(chat_id)
     save_automute_groups(AUTOMUTE_GROUPS)
-    await message.reply(f"{title_bar('AUTO MUTE', '❌')}\nAuto Mute DISABLED in {chat_title}")
+    await message.reply(f"❌ AUTO MUTE\nAuto Mute DISABLED in {chat_title}")
 
 async def cmd_list_automute(client, message):
     if not AUTOMUTE_GROUPS:
-        await message.reply("No active auto mute groups")
+        await message.reply("📋 No active auto mute groups")
         return
     lines = []
     for gid in list(AUTOMUTE_GROUPS)[:30]:
@@ -669,17 +669,28 @@ async def cmd_list_automute(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"{title_bar('AUTO MUTE LIST', '📋')}\nTotal: {len(AUTOMUTE_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 AUTO MUTE LIST\nTotal: {len(AUTOMUTE_GROUPS)}\n" + "\n".join(lines))
 
-# =============================================
-# COMMAND: CHECK AUTO MUTE
-# =============================================
 async def cmd_check_automute(client, message):
     global AUTOMUTE_GROUPS
     reloaded = load_automute_groups()
     AUTOMUTE_GROUPS = reloaded
     
-    await message.reply(f"{title_bar('AUTO MUTE STATUS', '🔇')}\nGroups: {len(AUTOMUTE_GROUPS)}\nFile: {'OK' if os.path.exists(AUTOMUTE_FILE) else 'MISSING'}")
+    groups_list = []
+    for gid in list(AUTOMUTE_GROUPS)[:20]:
+        try:
+            chat = await client.get_chat(gid)
+            groups_list.append(f"• {chat.title}")
+        except:
+            groups_list.append(f"• ID: {gid}")
+    
+    await message.reply(f"""
+🔍 AUTO MUTE STATUS
+• File: {'✅ OK' if os.path.exists(AUTOMUTE_FILE) else '❌ MISSING'}
+• Memory: {len(AUTOMUTE_GROUPS)} groups
+• File: {len(reloaded)} groups
+• Active: {chr(10).join(groups_list) if groups_list else 'None'}
+""")
 
 # =============================================
 # COMMAND: GCAST
@@ -692,7 +703,10 @@ async def cmd_gcast(client, message):
     elif len(message.command) > 1:
         pesan = message.text.split(maxsplit=1)[1]
     else:
-        await message.reply(f"{title_bar('GCAST', '❌')}\n.gcast <pesan> atau reply ke pesan")
+        await message.reply(f"""
+❌ GCAST
+.gcast <pesan> atau reply ke pesan
+""")
         return
     
     if not pesan:
@@ -718,7 +732,7 @@ async def cmd_gcast(client, message):
     
     status_msg = await client.send_message(
         message.chat.id,
-        f"{title_bar('GCAST', '📢')}\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(0, total)}\nProcessing..."
+        f"📢 GCAST\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(0, total)}\nProcessing..."
     )
     
     berhasil, gagal, processed = 0, 0, 0
@@ -735,7 +749,7 @@ async def cmd_gcast(client, message):
             processed += 1
             if processed % 5 == 0 or processed == total:
                 await status_msg.edit(
-                    f"{title_bar('GCAST', '📢')}\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal}\n{processed}/{total}"
+                    f"📢 GCAST\nTask: #{task_id}\nTarget: {total} groups\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal}\n{processed}/{total}"
                 )
             await asyncio.sleep(0.2)
     
@@ -743,7 +757,7 @@ async def cmd_gcast(client, message):
     success_rate = int(berhasil / total * 100) if total > 0 else 0
     
     await status_msg.edit(
-        f"{title_bar('GCAST DONE', '✅')}\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | Rate: {success_rate}%"
+        f"✅ GCAST DONE\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | Rate: {success_rate}%"
     )
 
 # =============================================
@@ -757,7 +771,10 @@ async def cmd_ucast_all(client, message):
     elif len(message.command) > 1:
         pesan = message.text.split(maxsplit=1)[1]
     else:
-        await message.reply(f"{title_bar('UCAST', '❌')}\n.ucast_all <pesan> atau reply ke pesan")
+        await message.reply(f"""
+❌ UCAST
+.ucast_all <pesan> atau reply ke pesan
+""")
         return
     
     if not pesan:
@@ -784,7 +801,7 @@ async def cmd_ucast_all(client, message):
     
     status_msg = await client.send_message(
         message.chat.id,
-        f"{title_bar('UCAST', '📨')}\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(0, total)}\nProcessing..."
+        f"📨 UCAST\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(0, total)}\nProcessing..."
     )
     
     berhasil, gagal, diblokir, processed = 0, 0, 0, 0
@@ -803,7 +820,7 @@ async def cmd_ucast_all(client, message):
             processed += 1
             if processed % 5 == 0 or processed == total:
                 await status_msg.edit(
-                    f"{title_bar('UCAST', '📨')}\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir}\n{processed}/{total}"
+                    f"📨 UCAST\nTask: #{task_id}\nTarget: {total} users\n{progress_bar(processed, total)}\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir}\n{processed}/{total}"
                 )
             await asyncio.sleep(0.3)
     
@@ -811,7 +828,7 @@ async def cmd_ucast_all(client, message):
     success_rate = int(berhasil / total * 100) if total > 0 else 0
     
     await status_msg.edit(
-        f"{title_bar('UCAST DONE', '✅')}\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir} | Rate: {success_rate}%"
+        f"✅ UCAST DONE\nTask: #{task_id}\nDuration: {elapsed}s\n✅ {berhasil} | ❌ {gagal} | 🚫 {diblokir} | Rate: {success_rate}%"
     )
 
 # =============================================
@@ -819,7 +836,7 @@ async def cmd_ucast_all(client, message):
 # =============================================
 async def cmd_spam(client, message):
     if len(message.command) < 3 and not message.reply_to_message:
-        await message.reply(f"{title_bar('SPAM', '❌')}\n.spam <jumlah> <pesan> atau reply ke pesan")
+        await message.reply(f"❌ SPAM\n.spam <jumlah> <pesan> atau reply ke pesan")
         return
     
     try:
@@ -837,7 +854,7 @@ async def cmd_spam(client, message):
         await message.reply("❌ Teks kosong!")
         return
     
-    status = await message.reply(f"{title_bar('SPAM', '🔄')}\nSpamming {count} messages...\n{progress_bar(0, count)}")
+    status = await message.reply(f"🔄 SPAM\nSpamming {count} messages...\n{progress_bar(0, count)}")
     await message.delete()
     
     for i in range(count):
@@ -845,9 +862,9 @@ async def cmd_spam(client, message):
         await asyncio.sleep(0.1)
         
         if (i + 1) % 10 == 0 or (i + 1) == count:
-            await status.edit(f"{title_bar('SPAM', '🔄')}\nSpamming {count} messages...\n{progress_bar(i + 1, count)}")
+            await status.edit(f"🔄 SPAM\nSpamming {count} messages...\n{progress_bar(i + 1, count)}")
     
-    await status.edit(f"{title_bar('SPAM DONE', '✅')}\nSent {count} messages!")
+    await status.edit(f"✅ SPAM DONE\nSent {count} messages!")
 
 # =============================================
 # COMMAND: GBAN
@@ -914,9 +931,9 @@ async def cmd_gban(client, message):
         await message.reply(f"⚠️ {target_name} udah kena GBAN!")
         return
     
-    status_msg = await message.reply(f"{title_bar('GBAN', '💀')}\nTarget: {target_name}\nProcessing...")
+    status_msg = await message.reply(f"💀 GBAN\nTarget: {target_name}\nProcessing...")
     result = await nuclear_global_ban(client, target_id)
-    await status_msg.edit(f"{title_bar('GBAN DONE', '✅')}\nTarget: {target_name}\nReport: {'✅' if result['report'] else '⚠️'}\nBlocks: {result['blocks']}")
+    await status_msg.edit(f"✅ GBAN DONE\nTarget: {target_name}\nReport: {'✅' if result['report'] else '⚠️'}\nBlocks: {result['blocks']}")
     
     try:
         await message.delete()
@@ -960,11 +977,11 @@ async def cmd_ungban(client, message):
         await client.unblock_user(target_id)
     except:
         pass
-    await message.reply(f"{title_bar('UNGBAN', '✅')}\nUser {target_name} removed from GBAN!")
+    await message.reply(f"✅ UNGBAN\nUser {target_name} removed from GBAN!")
 
 async def cmd_listgban(client, message):
     if not GBAN_USERS:
-        await message.reply("No GBAN victims yet")
+        await message.reply("📋 No GBAN victims yet")
         return
     user_list = []
     for uid in list(GBAN_USERS)[:30]:
@@ -973,7 +990,7 @@ async def cmd_listgban(client, message):
             user_list.append(f"• {user.first_name} (@{user.username})")
         except:
             user_list.append(f"• ID: {uid}")
-    await message.reply(f"{title_bar('GBAN LIST', '📋')}\nTotal: {len(GBAN_USERS)}\n" + "\n".join(user_list))
+    await message.reply(f"📋 GBAN LIST\nTotal: {len(GBAN_USERS)}\n" + "\n".join(user_list))
 
 # =============================================
 # COMMAND: WHITELIST & BLACKLIST
@@ -986,7 +1003,7 @@ async def cmd_grup_on(client, message):
     cid, title = message.chat.id, message.chat.title or "Grup"
     WHITELIST_GROUPS.add(cid)
     save_whitelist(WHITELIST_GROUPS)
-    await message.reply(f"{title_bar('AUTO REPLY', '✅')}\nAuto reply ENABLED in {title}")
+    await message.reply(f"✅ AUTO REPLY\nAuto reply ENABLED in {title}")
 
 async def cmd_grup_off(client, message):
     global WHITELIST_GROUPS
@@ -996,11 +1013,11 @@ async def cmd_grup_off(client, message):
     cid, title = message.chat.id, message.chat.title or "Grup"
     WHITELIST_GROUPS.discard(cid)
     save_whitelist(WHITELIST_GROUPS)
-    await message.reply(f"{title_bar('AUTO REPLY', '❌')}\nAuto reply DISABLED in {title}")
+    await message.reply(f"❌ AUTO REPLY\nAuto reply DISABLED in {title}")
 
 async def cmd_list_whitelist(client, message):
     if not WHITELIST_GROUPS:
-        await message.reply("No groups with auto reply enabled")
+        await message.reply("📋 No groups with auto reply enabled")
         return
     lines = []
     for gid in list(WHITELIST_GROUPS)[:30]:
@@ -1009,7 +1026,7 @@ async def cmd_list_whitelist(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"{title_bar('AUTO REPLY GROUPS', '📋')}\nTotal: {len(WHITELIST_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 AUTO REPLY GROUPS\nTotal: {len(WHITELIST_GROUPS)}\n" + "\n".join(lines))
 
 async def cmd_addbl(client, message):
     if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -1021,7 +1038,7 @@ async def cmd_addbl(client, message):
         return
     BLOCKED_GROUPS.add(gid)
     save_blacklist(BLOCKED_GROUPS)
-    await message.reply(f"{title_bar('BLACKLISTED', '🚫')}\n{title} added to blacklist!")
+    await message.reply(f"🚫 BLACKLISTED\n{title} added to blacklist!")
 
 async def cmd_rmbl(client, message):
     if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -1033,11 +1050,11 @@ async def cmd_rmbl(client, message):
         return
     BLOCKED_GROUPS.remove(gid)
     save_blacklist(BLOCKED_GROUPS)
-    await message.reply(f"{title_bar('REMOVED', '✅')}\n{title} removed from blacklist!")
+    await message.reply(f"✅ REMOVED\n{title} removed from blacklist!")
 
 async def cmd_listbl(client, message):
     if not BLOCKED_GROUPS:
-        await message.reply("No blacklisted groups")
+        await message.reply("📋 No blacklisted groups")
         return
     lines = []
     for gid in list(BLOCKED_GROUPS)[:20]:
@@ -1046,7 +1063,7 @@ async def cmd_listbl(client, message):
             lines.append(f"• {chat.title}")
         except:
             lines.append(f"• ID: {gid}")
-    await message.reply(f"{title_bar('BLACKLIST', '📋')}\nTotal: {len(BLOCKED_GROUPS)}\n" + "\n".join(lines))
+    await message.reply(f"📋 BLACKLIST\nTotal: {len(BLOCKED_GROUPS)}\n" + "\n".join(lines))
 
 # =============================================
 # COMMAND: TEST DETEKSI
@@ -1081,7 +1098,7 @@ Status: NOT DETECTED
 # COMMAND: REFRESH BOT
 # =============================================
 async def cmd_refresh(client, message):
-    await message.reply(f"{title_bar('REFRESH', '🔄')}\nBot akan di-restart dalam 3 detik!")
+    await message.reply(f"🔄 REFRESH\nBot akan di-restart dalam 3 detik!")
     
     save_automute_groups(AUTOMUTE_GROUPS)
     save_superbrutal_groups(SUPERBRUTAL_GROUPS)
@@ -1099,15 +1116,15 @@ async def cmd_refresh(client, message):
 async def cmd_botstatus(client, message):
     me = await client.get_me()
     await message.reply(f"""
-{title_bar("BOT STATUS", "💀")}
-Bot: @{me.username}
-Uptime: {get_uptime()}
-Handler: ACTIVE
+💀 BOT STATUS
+• Bot: @{me.username}
+• Uptime: {get_uptime()}
+• Handler: ACTIVE
 
-Auto Mute: {len(AUTOMUTE_GROUPS)} groups
-Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups
-Auto Reply: {len(WHITELIST_GROUPS)} groups
-Blacklist: {len(BLOCKED_GROUPS)} groups
+• Auto Mute: {len(AUTOMUTE_GROUPS)} groups
+• Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups
+• Auto Reply: {len(WHITELIST_GROUPS)} groups
+• Blacklist: {len(BLOCKED_GROUPS)} groups
 """)
 
 # =============================================
@@ -1115,53 +1132,53 @@ Blacklist: {len(BLOCKED_GROUPS)} groups
 # =============================================
 async def cmd_help(client, message):
     help_text = f"""
-{title_bar("THE TAMERS COMMANDS", "💀")}
+💀 THE TAMERS COMMANDS
 
-BASIC:
-.ping - Cek kecepatan
-.status - Status bot
-.info - Info akun
-.info @user - Info user lain
-.afk / .unafk - Mode AFK
-.refresh - Restart bot
+⚡ BASIC
+• .ping - Cek kecepatan
+• .status - Status bot
+• .info - Info akun sendiri
+• .info @user - Info user lain
+• .afk / .unafk - Mode AFK
+• .refresh - Restart bot
 
-AUTO MUTE:
-.automute on/off - Auto mute di grup
-.listautomute - Lihat grup auto mute
-.checkautomute - Cek status
-.testdetect - Test deteksi
+🔇 AUTO MUTE
+• .automute on/off - Auto mute di grup
+• .listautomute - Lihat grup auto mute
+• .checkautomute - Cek status
+• .testdetect - Test deteksi
 
-SUPER BRUTAL:
-.superbrutal on/off - Balas semua pesan
-.listsuperbrutal - Lihat grup
+🔥 SUPER BRUTAL
+• .superbrutal on/off - Balas semua pesan
+• .listsuperbrutal - Lihat grup
 
-AUTO REPLY:
-.grup on/off - Auto reply grup
-.private on/off - Auto reply private
-.listgrup - Lihat grup
+🤖 AUTO REPLY
+• .grup on/off - Auto reply grup
+• .private on/off - Auto reply private
+• .listgrup - Lihat grup
 
-BLACKLIST:
-.addbl / .rmbl - Blacklist grup
-.listbl - Lihat blacklist
+🚫 BLACKLIST
+• .addbl / .rmbl - Blacklist grup
+• .listbl - Lihat blacklist
 
-BROADCAST:
-.gcast <pesan> - Broadcast ke grup
-.ucast_all <pesan> - Broadcast ke private
-.spam <jml> <pesan> - Spam
+📢 BROADCAST
+• .gcast <pesan> - Broadcast ke grup
+• .ucast_all <pesan> - Broadcast ke private
+• .spam <jml> <pesan> - Spam
 
-GBAN:
-.gban @user - GBAN user
-.ungban @user - Hapus GBAN
-.listgban - Lihat korban
+💀 GBAN
+• .gban @user - GBAN user
+• .ungban @user - Hapus GBAN
+• .listgban - Lihat korban
 
-MEDIA:
-.downloadonce (reply) - Download video/foto sekali lihat
+📸 MEDIA
+• .downloadonce (reply) - Download foto/video sekali lihat
 
-DETECTION:
-NSFW → MUTE 1 MINGGU
-PROMO → MUTE 30 MENIT
-SPAM → MUTE 10 MENIT
-MENTION SPAM → MUTE 1 MENIT
+🎯 DETECTION
+• NSFW → MUTE 1 MINGGU
+• PROMO → MUTE 30 MENIT
+• SPAM → MUTE 10 MENIT
+• MENTION SPAM → MUTE 1 MENIT
 
 {BRAND} v{VERSION}
 """
@@ -1205,7 +1222,7 @@ async def cmd_approve(client, message):
         await client.unblock_user(target_id)
     except:
         pass
-    await message.reply(f"{title_bar('APPROVED', '✅')}\nUser {target_name} approved!")
+    await message.reply(f"✅ APPROVED\nUser {target_name} approved!")
 
 async def cmd_reject(client, message):
     global afk_pending_users, afk_approved_users
@@ -1243,11 +1260,11 @@ async def cmd_reject(client, message):
     
     afk_pending_users.pop(target_id, None)
     afk_approved_users.discard(target_id)
-    await message.reply(f"{title_bar('REJECTED', '🚫')}\nUser {target_name} blocked!")
+    await message.reply(f"🚫 REJECTED\nUser {target_name} blocked!")
 
 async def cmd_afklist(client, message):
     if not afk_pending_users:
-        await message.reply("No pending users")
+        await message.reply("📋 No pending users")
         return
     
     lines = []
@@ -1259,7 +1276,7 @@ async def cmd_afklist(client, message):
             lines.append(f"{warned} {name} - {data['count']}/5")
         except:
             lines.append(f"○ User {uid}")
-    await message.reply(f"{title_bar('AFK PENDING', '📋')}\n" + "\n".join(lines))
+    await message.reply(f"📋 AFK PENDING\n" + "\n".join(lines))
 
 async def cmd_unblock_user(client, message):
     target_id = None
@@ -1291,7 +1308,7 @@ async def cmd_unblock_user(client, message):
     
     try:
         await client.unblock_user(target_id)
-        await message.reply(f"{title_bar('UNBLOCKED', '✅')}\nUser {target_name} unblocked!")
+        await message.reply(f"✅ UNBLOCKED\nUser {target_name} unblocked!")
         afk_pending_users.pop(target_id, None)
         afk_approved_users.discard(target_id)
     except Exception as e:
@@ -1348,14 +1365,14 @@ async def ultra_brutal_handler(client, message):
                 try:
                     await client.block_user(user_id)
                     afk_pending_users[user_id]["blocked"] = True
-                    await message.reply("SPAM! Blocked!")
+                    await message.reply("💀 SPAM! Blocked!")
                 except:
                     pass
             return
         
         if count >= 3 and not afk_pending_users[user_id].get("warned", False):
             afk_pending_users[user_id]["warned"] = True
-            await message.reply("WARNING! Don't spam!")
+            await message.reply("⚠️ WARNING! Don't spam!")
             return
         
         await message.reply(AFK_REPLY)
