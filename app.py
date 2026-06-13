@@ -333,6 +333,21 @@ def save_gban_list(gban_set):
         json.dump({"gban_users": list(gban_set)}, f, indent=4)
 
 # =============================================
+# COMMAND: PRIVATE ON/OFF (BARU)
+# =============================================
+async def cmd_private_on(client, message):
+    global settings
+    settings["auto_reply_private"] = True
+    save_settings(settings)
+    await message.reply(f"✅ 𝐏𝐑𝐈𝐕𝐀𝐓𝐄 𝐀𝐔𝐓𝐎 𝐑𝐄𝐏𝐋𝐘\nAuto reply ENABLED for private chats!")
+
+async def cmd_private_off(client, message):
+    global settings
+    settings["auto_reply_private"] = False
+    save_settings(settings)
+    await message.reply(f"❌ 𝐏𝐑𝐈𝐕𝐀𝐓𝐄 𝐀𝐔𝐓𝐎 𝐑𝐄𝐏𝐋𝐘\nAuto reply DISABLED for private chats!")
+
+# =============================================
 # AUTO MUTE FUNCTIONS
 # =============================================
 async def is_admin_group(client, chat_id, user_id):
@@ -564,6 +579,7 @@ async def cmd_status(client, message):
 • Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups
 • Auto Reply: {len(WHITELIST_GROUPS)} groups
 • Blacklist: {len(BLOCKED_GROUPS)} groups
+• Private Auto Reply: {'ON' if settings.get('auto_reply_private', True) else 'OFF'}
 
 🖥️ 𝐒𝐲𝐬𝐭𝐞𝐦
 • CPU: {cpu}%
@@ -1194,7 +1210,8 @@ async def cmd_botstatus(client, message):
 📊 𝐅𝐞𝐚𝐭𝐮𝐫𝐞𝐬
 • Auto Mute: {len(AUTOMUTE_GROUPS)} groups
 • Super Brutal: {len(SUPERBRUTAL_GROUPS)} groups
-• Auto Reply: {len(WHITELIST_GROUPS)} groups
+• Auto Reply Group: {len(WHITELIST_GROUPS)} groups
+• Auto Reply Private: {'ON' if settings.get('auto_reply_private', True) else 'OFF'}
 • Blacklist: {len(BLOCKED_GROUPS)} groups
 • GBAN Victims: {len(GBAN_USERS)}
 """)
@@ -1231,7 +1248,7 @@ async def cmd_help(client, message):
 🤖 𝐀𝐔𝐓𝐎 𝐑𝐄𝐏𝐋𝐘
 • .grup on - Auto reply di grup
 • .grup off - Nonaktifkan auto reply grup
-• .private on - Auto reply private chat
+• .private on - Auto reply private chat (ON/OFF)
 • .private off - Nonaktifkan private reply
 • .listgrup - Lihat grup auto reply
 
@@ -1396,7 +1413,7 @@ async def cmd_unblock_user(client, message):
         await message.reply(f"❌ Gagal: {e}")
 
 # =============================================
-# ULTRA BRUTAL HANDLER
+# ULTRA BRUTAL HANDLER (FIXED)
 # =============================================
 async def ultra_brutal_handler(client, message):
     global is_afk, afk_pending_users, afk_approved_users, WHITELIST_GROUPS, BLOCKED_GROUPS, GBAN_USERS, SUPERBRUTAL_GROUPS, AUTOMUTE_GROUPS
@@ -1424,48 +1441,8 @@ async def ultra_brutal_handler(client, message):
     if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
         user_name = message.from_user.first_name or message.from_user.username or str(message.from_user.id)
         await check_and_auto_mute(client, chat_id, message.from_user.id, user_name, message)
-    
-    if is_afk and chat_type == ChatType.PRIVATE:
-        user_id = message.from_user.id
         
-        if user_id in afk_approved_users:
-            await message.reply(get_simple_reply())
-            return
-        
-        if user_id in afk_pending_users and afk_pending_users[user_id].get("blocked", False):
-            return
-        
-        if user_id not in afk_pending_users:
-            afk_pending_users[user_id] = {"count": 0, "warned": False, "blocked": False}
-        
-        afk_pending_users[user_id]["count"] += 1
-        count = afk_pending_users[user_id]["count"]
-        
-        if count >= 5:
-            if not afk_pending_users[user_id].get("blocked", False):
-                try:
-                    await client.block_user(user_id)
-                    afk_pending_users[user_id]["blocked"] = True
-                    await message.reply("💀 SPAM! Blocked!")
-                except:
-                    pass
-            return
-        
-        if count >= 3 and not afk_pending_users[user_id].get("warned", False):
-            afk_pending_users[user_id]["warned"] = True
-            await message.reply("⚠️ WARNING! Don't spam!")
-            return
-        
-        await message.reply(AFK_REPLY)
-        return
-    
-    if chat_type == ChatType.PRIVATE:
-        settings_local = load_settings()
-        if settings_local.get("auto_reply_private", True):
-            await message.reply(get_brutal_reply())
-        return
-    
-    if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
+        # Group replies (tidak terpengaruh AFK)
         if chat_id in SUPERBRUTAL_GROUPS:
             await message.reply(get_brutal_reply())
             return
@@ -1476,6 +1453,49 @@ async def ultra_brutal_handler(client, message):
         
         if chat_id in BLOCKED_GROUPS:
             return
+    
+    # PRIVATE CHAT HANDLER - PRIORITAS AFK
+    elif chat_type == ChatType.PRIVATE:
+        # PRIORITAS #1: AFK MODE
+        if is_afk:
+            user_id = message.from_user.id
+            
+            if user_id in afk_approved_users:
+                await message.reply(get_simple_reply())
+                return
+            
+            if user_id in afk_pending_users and afk_pending_users[user_id].get("blocked", False):
+                return
+            
+            if user_id not in afk_pending_users:
+                afk_pending_users[user_id] = {"count": 0, "warned": False, "blocked": False}
+            
+            afk_pending_users[user_id]["count"] += 1
+            count = afk_pending_users[user_id]["count"]
+            
+            if count >= 5:
+                if not afk_pending_users[user_id].get("blocked", False):
+                    try:
+                        await client.block_user(user_id)
+                        afk_pending_users[user_id]["blocked"] = True
+                        await message.reply("💀 SPAM! Blocked!")
+                    except:
+                        pass
+                return
+            
+            if count >= 3 and not afk_pending_users[user_id].get("warned", False):
+                afk_pending_users[user_id]["warned"] = True
+                await message.reply("⚠️ WARNING! Don't spam!")
+                return
+            
+            await message.reply(AFK_REPLY)
+            return
+        
+        # PRIORITAS #2: PRIVATE AUTO REPLY (jika AFK OFF)
+        settings_local = load_settings()
+        if settings_local.get("auto_reply_private", True):
+            await message.reply(get_brutal_reply())
+        # Jika private auto reply OFF, tidak balas apapun
 
 # =============================================
 # FLASK ROUTES
@@ -1586,6 +1606,12 @@ async def main():
         
         @client.on_message(filters.me & filters.command("listgrup", prefixes="."))
         async def _(c, m): await cmd_list_whitelist(c, m)
+        
+        @client.on_message(filters.me & filters.command("private on", prefixes="."))
+        async def _(c, m): await cmd_private_on(c, m)
+        
+        @client.on_message(filters.me & filters.command("private off", prefixes="."))
+        async def _(c, m): await cmd_private_off(c, m)
         
         @client.on_message(filters.me & filters.command("gcast", prefixes="."))
         async def _(c, m): await cmd_gcast(c, m)
