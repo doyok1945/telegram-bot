@@ -192,7 +192,7 @@ def get_mention_reply(): return random.choice(MENTION_REPLIES)
 def title_bar(text, icon="💀"):
     return f"{icon} {text}"
 
-def progress_bar(current, total, width=20):
+def progress_bar(current, total, width=15):
     if total == 0:
         return f"[{'░'*width}] 0%"
     persen = int(current / total * 100)
@@ -779,7 +779,7 @@ async def cmd_check_automute(client, message):
 """)
 
 # =============================================
-# COMMAND: GCAST (DENGAN DETAIL LENGKAP)
+# COMMAND: GCAST (RAPI & DETAIL)
 # =============================================
 async def cmd_gcast(client, message):
     pesan = None
@@ -835,14 +835,14 @@ async def cmd_gcast(client, message):
 🎯 Target: {total} groups
 🚫 Blacklisted: {total_blacklisted} groups
 📝 Message: {pesan[:50]}{'...' if len(pesan) > 50 else ''}
-━━━━━━━━━━━━━━━━━━━━━━━━{progress_bar(0, total)}
+━━━━━━━━━━━━━━━━━━━━━━━━
+{progress_bar(0, total)}
 ⏳ Processing...
 ━━━━━━━━━━━━━━━━━━━━━━━━
 """)
     
     berhasil, gagal, processed = 0, 0, 0
     failed_groups = []
-    success_groups = []
     
     async for dialog in client.get_dialogs():
         chat = dialog.chat
@@ -850,10 +850,9 @@ async def cmd_gcast(client, message):
             try:
                 await client.send_message(chat.id, pesan)
                 berhasil += 1
-                success_groups.append(chat.title or chat.id)
             except Exception as e:
                 gagal += 1
-                failed_groups.append(f"{chat.title or chat.id}: {str(e)[:30]}")
+                failed_groups.append(f"{chat.title or chat.id}")
             
             processed += 1
             if processed % 3 == 0 or processed == total:
@@ -895,16 +894,15 @@ async def cmd_gcast(client, message):
 📈 Rate: {success_rate}%
 🎯 Total: {total} groups
 🚫 Blacklisted: {total_blacklisted} groups
-━━━━━━━━━━━━━━━━━━━━━━━━
-📝 Message Preview: {pesan[:100]}{'...' if len(pesan) > 100 else ''}
 {fail_detail}
 ━━━━━━━━━━━━━━━━━━━━━━━━
+📝 Message Preview: {pesan[:100]}{'...' if len(pesan) > 100 else ''}
 {BRAND} 💀
 """
     )
 
 # =============================================
-# COMMAND: UCAST_ALL (DENGAN DETAIL LENGKAP)
+# COMMAND: UCAST_ALL (RAPI & DETAIL)
 # =============================================
 async def cmd_ucast_all(client, message):
     pesan = None
@@ -936,7 +934,6 @@ async def cmd_ucast_all(client, message):
     
     total = 0
     me = await client.get_me()
-    blocked_users = 0
     
     async for dialog in client.get_dialogs():
         if dialog.chat.type == ChatType.PRIVATE and dialog.chat.id > 0 and dialog.chat.id != me.id:
@@ -974,10 +971,10 @@ async def cmd_ucast_all(client, message):
             except UserIsBlocked:
                 diblokir += 1
                 gagal += 1
-                failed_users.append(f"{dialog.chat.first_name or 'Unknown'}: Blocked")
+                failed_users.append(f"{dialog.chat.first_name or 'Unknown'}")
             except Exception as e:
                 gagal += 1
-                failed_users.append(f"{dialog.chat.first_name or 'Unknown'}: {str(e)[:20]}")
+                failed_users.append(f"{dialog.chat.first_name or 'Unknown'}")
             
             processed += 1
             if processed % 3 == 0 or processed == total:
@@ -1018,10 +1015,9 @@ async def cmd_ucast_all(client, message):
 🚫 Blocked: {diblokir} users
 📈 Rate: {success_rate}%
 🎯 Total: {total} users
-━━━━━━━━━━━━━━━━━━━━━━━━
-📝 Message Preview: {pesan[:100]}{'...' if len(pesan) > 100 else ''}
 {fail_detail}
 ━━━━━━━━━━━━━━━━━━━━━━━━
+📝 Message Preview: {pesan[:100]}{'...' if len(pesan) > 100 else ''}
 {BRAND} 💀
 """
     )
