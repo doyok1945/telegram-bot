@@ -54,8 +54,8 @@ executor = ThreadPoolExecutor(max_workers=50)
 # =============================================
 # KONFIGURASI
 # =============================================
-API_ID = 32584214
-API_HASH = "6a59dd69d7e9db9916ff9c07eb237076"
+API_ID = ISI API ID KAMU DI SINI
+API_HASH = "ISI API KEY KAMU DI SINI"
 BLACKLIST_FILE = "blacklist.json"
 SETTINGS_FILE = "settings.json"
 WHITELIST_FILE = "whitelist.json"
